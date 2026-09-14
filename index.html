@@ -1954,33 +1954,54 @@
                 this._runMock(action, args, success, failure);
               } else {
                 // 2. Fetch live data from API_URL (Google Apps Script Web App)
+                let text = "";
+                let json = null;
+                let fetchError = null;
+
+                // Strategy A: Try POST request
                 try {
                   const response = await fetch(API_URL, {
                     method: "POST",
                     body: JSON.stringify({ action: action, args: args })
                   });
-                  
-                  const text = await response.text();
-                  let json;
+                  text = await response.text();
                   try {
                     json = JSON.parse(text);
                   } catch(e) {
-                    console.error("Failed to parse JSON response:", text);
-                    let errMsg = "การตั้งค่า Web App ไม่ถูกต้อง: ระบบไม่ได้ส่งค่ากลับมาเป็น JSON (อาจเนื่องจากสิทธิ์การ Deploy ไม่ใช่ 'Anyone (ทุกคน)' หรือโครงการ Apps Script ยังไม่ได้รับสิทธิ์เข้าถึง)";
-                    alert(errMsg);
-                    if (failure) failure(new Error(errMsg));
-                    return;
+                    // Not valid JSON from POST
                   }
-                  
+                } catch(err) {
+                  fetchError = err;
+                }
+
+                // Strategy B: Fallback to GET request if POST didn't return valid JSON
+                if (!json) {
+                  try {
+                    const getUrl = API_URL + (API_URL.includes("?") ? "&" : "?") + 
+                      "action=" + encodeURIComponent(action) + 
+                      "&args=" + encodeURIComponent(JSON.stringify(args));
+                    const getResponse = await fetch(getUrl, { method: "GET" });
+                    text = await getResponse.text();
+                    try {
+                      json = JSON.parse(text);
+                    } catch(e) {
+                      // Still not JSON
+                    }
+                  } catch(err) {
+                    if (!fetchError) fetchError = err;
+                  }
+                }
+
+                if (json) {
                   if (json.success) {
                     if (success) success(json.data);
                   } else {
-                    alert("เกิดข้อผิดพลาดจากเซิร์ฟเวอร์: " + json.error);
+                    alert("เกิดข้อผิดพลาดจากเซิร์ฟเวอร์: " + (json.error || "ไม่ทราบสาเหตุ"));
                     if (failure) failure(new Error(json.error));
                   }
-                } catch (err) {
-                  console.error("API Call Failed:", err);
-                  let errorDetails = err.message || err.toString();
+                } else {
+                  console.error("API Call Failed. Response Text:", text, "Error:", fetchError);
+                  let errorDetails = fetchError ? (fetchError.message || fetchError.toString()) : "เซิร์ฟเวอร์ส่งกลับข้อความที่ไม่ใช่ JSON";
                   let promptMsg = "ไม่สามารถเชื่อมต่อไปยัง Google Sheets API ได้:\n\n";
                   
                   if (window.location.protocol === 'file:') {
@@ -1989,12 +2010,14 @@
                                  "1. แนะนำให้อัปโหลดไฟล์ index.html ขึ้น GitHub Pages แล้วทดสอบรันด้วยลิงก์ HTTPS จริง\n" +
                                  "2. หรือตรวจสอบว่าลิงก์ API ถูกต้องและตั้งค่า Deploy เป็น Anyone (ทุกคน) หรือยัง\n\n";
                   } else {
-                    promptMsg += "🚨 อาจเกิดจากสิทธิ์ในการเข้าถึงของ Web App หรือการระบุลิงก์ API ผิดพลาด\n\n";
+                    promptMsg += "🚨 อาจเกิดจาก:\n" +
+                                 "1. สิทธิ์การเข้าถึง Web App (ต้องตั้ง Who has access: Anyone)\n" +
+                                 "2. ยังไม่ได้กด 'เรียกใช้' (Run) ฟังก์ชัน initializeSheets ใน Google Apps Script เพื่ออนุมัติสิทธิ์ (Review Permissions)\n\n";
                   }
                   
-                  promptMsg += "รายละเอียดข้อผิดพลาด: " + errorDetails;
+                  promptMsg += "รายละเอียด: " + errorDetails;
                   alert(promptMsg);
-                  if (failure) failure(err);
+                  if (failure) failure(fetchError || new Error(errorDetails));
                 }
               }
             },
