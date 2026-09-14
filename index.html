@@ -1,0 +1,3334 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>HANA Nurse Room System</title>
+  <!-- Google Fonts: Inter / Outfit / Kanit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <style>
+    /* --- CSS Reset & Variables --- */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Outfit', 'Kanit', sans-serif;
+    }
+    
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+      --glass-bg: rgba(30, 41, 59, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-color: #6366f1;
+      --accent-hover: #4f46e5;
+      --accent-glow: rgba(99, 102, 241, 0.4);
+      --success-color: #10b981;
+      --warning-color: #f59e0b;
+      --danger-color: #ef4444;
+      --card-radius: 16px;
+    }
+    
+    body {
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      overflow-x: hidden;
+    }
+
+    /* --- Scrollbars --- */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* --- Login Screen --- */
+    #login-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-gradient);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 0.5s ease, visibility 0.5s;
+    }
+    
+    .login-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 40px;
+      width: 400px;
+      max-width: 90%;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+      text-align: center;
+      animation: fadeInUp 0.6s ease;
+    }
+    
+    .login-logo {
+      font-size: 3rem;
+      background: linear-gradient(135deg, #818cf8, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+    }
+    
+    .login-card h2 {
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+    
+    .login-card p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+    }
+    
+    .input-group {
+      position: relative;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    
+    .input-group label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+    
+    .input-control {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      color: var(--text-main);
+      font-size: 1rem;
+      transition: all 0.3s;
+      outline: none;
+    }
+    
+    .input-control:focus {
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    
+    .login-btn {
+      width: 100%;
+      background: var(--accent-color);
+      color: #fff;
+      border: none;
+      padding: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.1s;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+    }
+    
+    .login-btn:hover {
+      background: var(--accent-hover);
+    }
+    
+    .login-btn:active {
+      transform: scale(0.98);
+    }
+    
+    .login-error {
+      color: var(--danger-color);
+      font-size: 0.85rem;
+      margin-top: 12px;
+      display: none;
+      animation: shake 0.3s;
+    }
+
+    /* --- App Layout --- */
+    #app-container {
+      display: none;
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+    }
+    
+    /* --- Sidebar --- */
+    .sidebar {
+      width: 280px;
+      background: rgba(15, 23, 42, 0.95);
+      border-right: 1px solid var(--glass-border);
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      z-index: 100;
+    }
+    
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 8px 24px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .brand-logo {
+      font-size: 1.8rem;
+      background: linear-gradient(135deg, #818cf8, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .brand-title {
+      font-weight: 600;
+      font-size: 1.15rem;
+      letter-spacing: 0.5px;
+    }
+    
+    .nav-list {
+      list-style: none;
+      margin-top: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex-grow: 1;
+    }
+    
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.3s;
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+    
+    .nav-item i {
+      font-size: 1.1rem;
+      width: 20px;
+      text-align: center;
+    }
+    
+    .nav-item:hover, .nav-item.active {
+      color: var(--text-main);
+      background: rgba(99, 102, 241, 0.15);
+      box-shadow: inset 3px 0 0 var(--accent-color);
+    }
+    
+    .sidebar-footer {
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px;
+    }
+    
+    .nurse-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+    }
+    
+    .nurse-avatar {
+      width: 32px;
+      height: 32px;
+      background: var(--accent-color);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+    
+    .logout-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: color 0.3s;
+    }
+    
+    .logout-btn:hover {
+      color: var(--danger-color);
+    }
+
+    /* --- Content Area --- */
+    .main-content {
+      flex-grow: 1;
+      padding: 32px 40px;
+      overflow-y: auto;
+      background: rgba(10, 15, 30, 0.2);
+    }
+    
+    .header-panel {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--glass-border);
+    }
+    
+    .tab-title {
+      font-size: 1.75rem;
+      font-weight: 600;
+    }
+    
+    .header-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* --- Cards & Grid Layouts --- */
+    .tab-page {
+      display: none;
+      animation: fadeIn 0.4s ease;
+    }
+    
+    .tab-page.active {
+      display: block;
+    }
+    
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    .grid-2-equal {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--card-radius);
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      margin-bottom: 24px;
+    }
+    
+    .card-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #fff;
+      border-left: 4px solid var(--accent-color);
+      padding-left: 10px;
+    }
+
+    /* --- Form Elements --- */
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+    
+    .form-group label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    
+    .form-group input, .form-group select, .form-group textarea {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: var(--text-main);
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.3s;
+      width: 100%;
+    }
+    
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    
+    .form-group input[readonly] {
+      background: rgba(15, 23, 42, 0.2);
+      color: var(--text-muted);
+      cursor: not-allowed;
+    }
+    
+    /* Toggle / Choice Buttons */
+    .status-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 6px;
+    }
+    
+    .status-btn {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--glass-border);
+      color: var(--text-muted);
+      padding: 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s;
+      text-align: center;
+    }
+    
+    .status-btn.active[data-val="BTW"] {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--success-color);
+      color: var(--success-color);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+    }
+    
+    .status-btn.active[data-val="Rest"] {
+      background: rgba(99, 102, 241, 0.2);
+      border-color: var(--accent-color);
+      color: var(--accent-color);
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+    }
+    
+    .status-btn.active[data-val="Refer"] {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: var(--danger-color);
+      color: var(--danger-color);
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+    }
+    
+    /* Action Buttons */
+    .btn {
+      background: var(--accent-color);
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s;
+      outline: none;
+    }
+    
+    .btn:hover {
+      background: var(--accent-hover);
+      box-shadow: 0 4px 12px var(--accent-glow);
+    }
+    
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: none;
+    }
+    
+    .btn-danger {
+      background: var(--danger-color);
+    }
+    .btn-danger:hover {
+      background: #dc2626;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+    
+    .btn-success {
+      background: var(--success-color);
+    }
+    .btn-success:hover {
+      background: #059669;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    /* --- Dynamic Medication Section --- */
+    .meds-container {
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.15);
+      margin-top: 10px;
+    }
+    
+    .med-row {
+      display: grid;
+      grid-template-columns: 1fr 100px 50px;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .med-row:last-child {
+      margin-bottom: 0;
+    }
+    
+    .remove-med-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: color 0.3s;
+      text-align: center;
+    }
+    
+    .remove-med-btn:hover {
+      color: var(--danger-color);
+    }
+
+    /* --- Patient Summary & Stats Panel --- */
+    .stats-badge-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    
+    .stat-badge-box {
+      background: rgba(15, 23, 42, 0.4);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+    }
+    
+    .stat-badge-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    
+    .stat-badge-value {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--accent-color);
+    }
+
+    /* --- Tables --- */
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.4);
+      margin-bottom: 16px;
+    }
+    
+    .custom-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+    
+    .custom-table th {
+      background: rgba(15, 23, 42, 0.8);
+      color: var(--text-main);
+      padding: 14px 16px;
+      font-weight: 600;
+      border-bottom: 1px solid var(--glass-border);
+      white-space: nowrap;
+    }
+    
+    .custom-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      color: #e2e8f0;
+      vertical-align: middle;
+    }
+    
+    .custom-table tr:last-child td {
+      border-bottom: none;
+    }
+    
+    .custom-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* --- Patient Alert Display --- */
+    .banner-alert {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid var(--warning-color);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+      color: var(--warning-color);
+      animation: pulseAlert 2s infinite;
+    }
+    
+    .banner-alert i {
+      font-size: 1.5rem;
+    }
+    
+    .banner-alert-content {
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    /* --- Info Boxes --- */
+    .info-list-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.9rem;
+    }
+    
+    .info-list-item:last-child {
+      border-bottom: none;
+    }
+    
+    .info-label {
+      color: var(--text-muted);
+    }
+    
+    .info-val {
+      font-weight: 500;
+      text-align: right;
+    }
+
+    /* --- Medicine Stock Cards --- */
+    .stock-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+      max-height: 500px;
+      overflow-y: auto;
+      padding-right: 8px;
+    }
+    
+    .stock-card {
+      background: rgba(15, 23, 42, 0.4);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 16px;
+      position: relative;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    
+    .stock-card:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+      transform: translateY(-2px);
+    }
+    
+    .stock-card.low-stock {
+      border-color: rgba(239, 68, 68, 0.4);
+      background: rgba(239, 68, 68, 0.05);
+    }
+    
+    .stock-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      line-height: 1.3;
+      min-height: 2.6rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    
+    .stock-stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    
+    .stock-qty {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    
+    .stock-card.low-stock .stock-qty {
+      color: var(--danger-color);
+    }
+    
+    .low-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: var(--danger-color);
+      color: #fff;
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    /* --- Modals --- */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
+    }
+    
+    .modal-backdrop.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .modal-container {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      width: 600px;
+      max-width: 95%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      animation: zoomIn 0.3s ease;
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--glass-border);
+    }
+    
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    
+    .close-modal-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: color 0.3s;
+    }
+    
+    .close-modal-btn:hover {
+      color: var(--text-main);
+    }
+    
+    .modal-body {
+      padding: 24px;
+    }
+    
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--glass-border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    /* --- Loading Overlay --- */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(4px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
+    }
+    
+    .loading-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid rgba(255, 255, 255, 0.1);
+      border-top-color: var(--accent-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    /* --- Toast Notifications --- */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 10001;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .toast {
+      background: rgba(15, 23, 42, 0.9);
+      border-left: 4px solid var(--accent-color);
+      border-top: 1px solid var(--glass-border);
+      border-right: 1px solid var(--glass-border);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 16px 20px;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 300px;
+      max-width: 400px;
+      animation: slideInRight 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    }
+    
+    .toast.success {
+      border-left-color: var(--success-color);
+    }
+    
+    .toast.danger {
+      border-left-color: var(--danger-color);
+    }
+    
+    .toast.warning {
+      border-left-color: var(--warning-color);
+    }
+
+    /* --- Animations --- */
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes zoomIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(100%);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    @keyframes pulseAlert {
+      0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+      70% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+    
+    /* --- Responsive --- */
+    @media (max-width: 1024px) {
+      #app-container {
+        flex-direction: column;
+      }
+      
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        padding: 16px;
+      }
+      
+      .nav-list {
+        flex-direction: row;
+        flex-wrap: wrap;
+        margin-top: 16px;
+      }
+      
+      .nav-item {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+      }
+      
+      .main-content {
+        padding: 24px 16px;
+      }
+      
+      .grid-2, .grid-2-equal, .grid-3 {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOADING OVERLAY -->
+  <div id="loading-overlay" class="loading-overlay">
+    <div class="spinner"></div>
+    <p id="loading-text" style="font-weight: 500; font-size: 1.05rem;">กำลังประมวลผลข้อมูล...</p>
+  </div>
+
+  <!-- TOAST NOTIFICATIONS -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- LOGIN SCREEN -->
+  <div id="login-screen">
+    <div class="login-card">
+      <div class="login-logo"><i class="fa-solid fa-hospital-user"></i></div>
+      <h2>ห้องพยาบาล HANA</h2>
+      <p>กรุณาลงชื่อเข้าใช้เพื่อเริ่มต้นระบบห้องพยาบาล</p>
+      <div class="input-group">
+        <label for="password-input">รหัสผ่าน (Password)</label>
+        <input type="password" id="password-input" class="input-control" placeholder="ระบุรหัสผ่านห้องพยาบาล..." onkeyup="if(event.key === 'Enter') attemptLogin()">
+      </div>
+      <button class="login-btn" onclick="attemptLogin()">เข้าสู่ระบบ</button>
+      <div id="login-error-msg" class="login-error"><i class="fa-solid fa-triangle-exclamation"></i> รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง</div>
+    </div>
+  </div>
+
+  <!-- APP CONTAINER -->
+  <div id="app-container">
+    
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div>
+        <div class="brand">
+          <div class="brand-logo"><i class="fa-solid fa-heart-pulse"></i></div>
+          <div class="brand-title">HANA Nurse Room</div>
+        </div>
+        
+        <ul class="nav-list">
+          <li class="nav-item active" onclick="switchTab('emp-entry')">
+            <i class="fa-solid fa-user-plus"></i>ลงข้อมูลพนักงาน Hana
+          </li>
+          <li class="nav-item" onclick="switchTab('non-emp-entry')">
+            <i class="fa-solid fa-user-shield"></i>ลงข้อมูลไม่ใช่พนักงาน
+          </li>
+          <li class="nav-item" onclick="switchTab('service-history')">
+            <i class="fa-solid fa-history"></i>ประวัติการรับบริการ
+          </li>
+          <li class="nav-item" onclick="switchTab('dashboard')">
+            <i class="fa-solid fa-chart-pie"></i>Dashboard สรุปผล
+          </li>
+          <li class="nav-item" onclick="switchTab('reports')">
+            <i class="fa-solid fa-file-invoice"></i>หน้า Report
+          </li>
+          <li class="nav-item" onclick="switchTab('stock')">
+            <i class="fa-solid fa-boxes-stacked"></i>สต๊อกยาห้องพยาบาล
+          </li>
+        </ul>
+      </div>
+      
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="nurse-badge">
+            <div class="nurse-avatar">N</div>
+            <span>Nurse Duty</span>
+          </div>
+          <button class="logout-btn" title="ออกจากระบบ" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i></button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      
+      <!-- HEADER PANEL -->
+      <div class="header-panel">
+        <h1 class="tab-title" id="page-title">ลงข้อมูลพนักงาน Hana</h1>
+        <div class="header-meta">
+          <span><i class="fa-solid fa-calendar"></i> <span id="current-date">-</span></span>
+          <span><i class="fa-solid fa-clock"></i> <span id="current-time">-</span></span>
+        </div>
+      </div>
+
+      <!-- PAGE 1: HANA EMPLOYEE ENTRY -->
+      <section id="page-emp-entry" class="tab-page active">
+        <div class="grid-2">
+          
+          <!-- Column 1: Record form & History details -->
+          <div>
+            <!-- ID SEARCH & MASTER INFO CARD -->
+            <div class="glass-card">
+              <h3 class="card-title"><i class="fa-solid fa-id-card"></i> ค้นหาพนักงาน</h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="emp-id-input">รหัสพนักงาน (6 หลัก)</label>
+                  <div style="display: flex; gap: 8px;">
+                    <input type="text" id="emp-id-input" placeholder="ระบุรหัสพนักงาน..." oninput="handleEmpIdTyping(this)" onkeyup="if(event.key==='Enter') searchEmployee()">
+                    <button class="btn" onclick="searchEmployee()"><i class="fa-solid fa-magnifying-glass"></i></button>
+                  </div>
+                </div>
+              </div>
+              
+              <div id="emp-details-form" style="display: none; border-top: 1px solid var(--glass-border); padding-top: 20px; margin-top: 15px;">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>ชื่อ (Name)</label>
+                    <input type="text" id="emp-name" placeholder="ชื่อ">
+                  </div>
+                  <div class="form-group">
+                    <label>นามสกุล (Surname)</label>
+                    <input type="text" id="emp-surname" placeholder="นามสกุล">
+                  </div>
+                  <div class="form-group">
+                    <label>แผนก (Department)</label>
+                    <input type="text" id="emp-dept" placeholder="แผนก">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>โรคประจำตัว (Congenital Disease)</label>
+                    <input type="text" id="emp-disease" placeholder="โรคประจำตัว">
+                  </div>
+                  <div class="form-group">
+                    <label>ยาที่แพ้ (Drug Allergies)</label>
+                    <input type="text" id="emp-allergy" placeholder="ยาที่แพ้">
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- VISIT HISTORY STATS CARD -->
+            <div id="visit-history-card" class="glass-card" style="display: none;">
+              <h3 class="card-title"><i class="fa-solid fa-history"></i> ประวัติการเข้ารับบริการ</h3>
+              
+              <!-- Warning Banner -->
+              <div id="visit-warning-banner" class="banner-alert" style="display: none;">
+                <i class="fa-solid fa-bell"></i>
+                <div class="banner-alert-content" id="visit-warning-text">-</div>
+              </div>
+              
+              <div class="stats-badge-grid">
+                <div class="stat-badge-box">
+                  <div class="stat-badge-label">จำนวนครั้งสะสมปี 2024</div>
+                  <div class="stat-badge-value" id="stats-2024">0</div>
+                </div>
+                <div class="stat-badge-box">
+                  <div class="stat-badge-label">จำนวนครั้งสะสมปี 2025</div>
+                  <div class="stat-badge-value" id="stats-2025">0</div>
+                </div>
+                <div class="stat-badge-box">
+                  <div class="stat-badge-label">จำนวนครั้งสะสมปี 2026</div>
+                  <div class="stat-badge-value" id="stats-2026">0</div>
+                </div>
+              </div>
+              
+              <h4 style="font-weight: 500; font-size: 0.95rem; margin-bottom: 10px; color: var(--text-muted);">บันทึกประวัติการใช้บริการ 3 ครั้งล่าสุด</h4>
+              <div class="table-container">
+                <table class="custom-table">
+                  <thead>
+                    <tr>
+                      <th>วันที่</th>
+                      <th>ระบบโรค</th>
+                      <th>อาการ</th>
+                    </tr>
+                  </thead>
+                  <tbody id="latest-visits-tbody">
+                    <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">ไม่มีประวัติการบันทึก</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- NEW TREATMENT ENTRY CARD -->
+            <div id="treatment-entry-card" class="glass-card" style="display: none;">
+              <h3 class="card-title"><i class="fa-solid fa-notes-medical"></i> บันทึกการรักษาใหม่</h3>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="treat-system">ระบบโรค</label>
+                  <select id="treat-system" class="input-control">
+                    <option value="" disabled selected>-- เลือกระบบโรค --</option>
+                    <option value="ระบบทางเดินอาหาร">ระบบทางเดินอาหาร</option>
+                    <option value="ระบบทางเดินหายใจ">ระบบทางเดินหายใจ</option>
+                    <option value="ระบบประสาท">ระบบประสาท</option>
+                    <option value="ระบบกล้ามเนื้อกระดูก">ระบบกล้ามเนื้อกระดูก</option>
+                    <option value="โรคในช่องปาก">โรคในช่องปาก</option>
+                    <option value="ระบบผิวหนัง">ระบบผิวหนัง</option>
+                    <option value="ระบบทางเดินปัสสาวะ + อวัยวะสืบพันธุ์">ระบบทางเดินปัสสาวะ + อวัยวะสืบพันธุ์</option>
+                    <option value="ระบบตา">ระบบตา</option>
+                    <option value="บาดแผล">บาดแผล</option>
+                    <option value="โรคระบบไหลเวียนเลือด">โรคระบบไหลเวียนเลือด</option>
+                    <option value="ระบบหู คอ จมูก">ระบบหู คอ จมูก</option>
+                    <option value="ความผิดปกติเกี่ยวกับภูมิคุ้มกัน">ความผิดปกติเกี่ยวกับภูมิคุ้มกัน</option>
+                    <option value="อุบัติเหตุจากการทำงาน">อุบัติเหตุจากการทำงาน</option>
+                    <option value="ภาวะแปรปรวนทางจิตและพฤติกรรม">ภาวะแปรปรวนทางจิตและพฤติกรรม</option>
+                    <option value="โรคเลือดและอวัยวะสร้างเลือด">โรคเลือดและอวัยวะสร้างเลือด</option>
+                    <option value="อื่นๆ">อื่นๆ</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="treat-shift">กะพนักงาน (Shift)</label>
+                  <select id="treat-shift" class="input-control">
+                    <option value="A">กะ A (เช้า)</option>
+                    <option value="B">กะ B (บ่าย)</option>
+                    <option value="C">กะ C (ดึก)</option>
+                    <option value="O" selected>กะ O (ปกติ)</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="treat-cc">อาการสำคัญ (CC)</label>
+                  <textarea id="treat-cc" rows="2" placeholder="อธิบายอาการสำคัญ..."></textarea>
+                </div>
+                <div class="form-group">
+                  <label for="treat-dx">การวินิจฉัย (DX)</label>
+                  <textarea id="treat-dx" rows="2" placeholder="อธิบายการวินิจฉัย..."></textarea>
+                </div>
+              </div>
+              
+              <!-- Dynamic Medications list -->
+              <div class="form-group full-width" style="margin-bottom: 20px;">
+                <label>การจ่ายยา (Medications)</label>
+                <div class="meds-container">
+                  <div id="medication-rows-container">
+                    <!-- Med rows appended here -->
+                  </div>
+                  <button class="btn btn-secondary" style="margin-top: 10px; font-size: 0.85rem;" onclick="addMedicationRow()"><i class="fa-solid fa-plus"></i> เพิ่มรายการยา</button>
+                </div>
+              </div>
+              
+              <!-- Post Service Status -->
+              <div class="form-group full-width" style="margin-bottom: 24px;">
+                <label>สถานะหลังรับบริการ</label>
+                <div class="status-buttons">
+                  <div class="status-btn" data-val="BTW" onclick="selectPostStatus('BTW')"><i class="fa-solid fa-briefcase"></i> กลับเข้าปฏิบัติงาน (BTW)</div>
+                  <div class="status-btn" data-val="Rest" onclick="selectPostStatus('Rest')"><i class="fa-solid fa-bed"></i> พักนอนห้องพยาบาล (Rest)</div>
+                  <div class="status-btn" data-val="Refer" onclick="selectPostStatus('Refer')"><i class="fa-solid fa-truck-medical"></i> ส่งต่อการรักษา (Refer)</div>
+                </div>
+              </div>
+              
+              <!-- Conditionally Displayed Status fields -->
+              <!-- Bed Rest Details -->
+              <div id="status-rest-panel" class="form-row" style="display: none;">
+                <div class="form-group">
+                  <label for="rest-start-time">เวลาที่เริ่มนอน</label>
+                  <input type="time" id="rest-start-time">
+                </div>
+                <div class="form-group">
+                  <label for="rest-end-time">เวลาสิ้นสุดนอน (สามารถข้ามแล้วบันทึกทีหลังได้)</label>
+                  <input type="time" id="rest-end-time">
+                </div>
+              </div>
+              
+              <!-- Referral Details -->
+              <div id="status-refer-panel" class="form-row" style="display: none;">
+                <div class="form-group">
+                  <label for="refer-hospital-select">ส่งต่อโรงพยาบาล</label>
+                  <select id="refer-hospital-select" class="input-control" onchange="toggleReferHospitalText(this.value)">
+                    <option value="" disabled selected>-- เลือกโรงพยาบาล --</option>
+                    <option value="โรงพยาบาลหริภุญชัย">โรงพยาบาลหริภุญชัย</option>
+                    <option value="โรงพยาบาลลำพูน">โรงพยาบาลลำพูน</option>
+                    <option value="โรงพยาบาลพริ้นซ์ลำพูน">โรงพยาบาลพริ้นซ์ลำพูน</option>
+                    <option value="โรงพยาบาลลำพูนใกล้หมอ">โรงพยาบาลลำพูนใกล้หมอ</option>
+                    <option value="อื่นๆ">โรงพยาบาลอื่นๆ (โปรดระบุ)</option>
+                  </select>
+                </div>
+                <div class="form-group" id="refer-hospital-other-group" style="display: none;">
+                  <label for="refer-hospital-other">ระบุชื่อโรงพยาบาล</label>
+                  <input type="text" id="refer-hospital-other" placeholder="ระบุชื่อโรงพยาบาล...">
+                </div>
+              </div>
+              
+              <!-- Submit Button -->
+              <div style="text-align: right; margin-top: 10px;">
+                <button class="btn btn-success" style="padding: 12px 30px;" onclick="submitTreatmentLog(false)"><i class="fa-solid fa-save"></i> บันทึกข้อมูลการรักษา</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Column 2: Health checkup display -->
+          <div>
+            <div id="checkup-history-card" class="glass-card" style="display: none;">
+              <h3 class="card-title"><i class="fa-solid fa-stethoscope"></i> ประวัติการตรวจสุขภาพ (Checkup)</h3>
+              <div id="checkup-years-tabs" style="display: flex; gap: 8px; margin-bottom: 16px;">
+                <!-- Tab buttons dynamically inserted -->
+              </div>
+              <div id="checkup-details-content">
+                <!-- Checkup data loaded here based on selected year -->
+                <p style="text-align: center; color: var(--text-muted);">ไม่มีข้อมูลประวัติผลการตรวจสุขภาพ</p>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </section>
+
+      <!-- PAGE 2: NON-EMPLOYEE ENTRY -->
+      <section id="page-non-emp-entry" class="tab-page">
+        <div class="glass-card">
+          <h3 class="card-title"><i class="fa-solid fa-user-shield"></i> ลงข้อมูลผู้ใช้บริการ (ไม่ใช่พนักงาน)</h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="non-emp-code">ประเภทผู้รับบริการ (รหัส)</label>
+              <select id="non-emp-code" class="input-control" onchange="setNonEmpPrefix(this.value)">
+                <option value="A1">A1 แม่บ้าน</option>
+                <option value="A2">A2 รปภ.</option>
+                <option value="A3">A3 กระเป๋ากระเป๋ายา</option>
+                <option value="A4" selected>A4 Vendor, visitor, นศ.ฝึกงาน</option>
+                <option value="A5">A5 หอพัก</option>
+                <option value="A6">A6 งานกีฬา Training นอกสถานที่</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="non-emp-name">ชื่อ (Firstname)</label>
+              <input type="text" id="non-emp-name" placeholder="ระบุชื่อจริง...">
+            </div>
+            <div class="form-group">
+              <label for="non-emp-surname">นามสกุล (Lastname)</label>
+              <input type="text" id="non-emp-surname" placeholder="ระบุชื่อสกุล...">
+            </div>
+            <div class="form-group">
+              <label for="non-emp-dept">แผนก/สังกัด</label>
+              <input type="text" id="non-emp-dept" placeholder="เช่น แม่บ้าน, บุคคลภายนอก, etc.">
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="non-emp-disease">โรคประจำตัว</label>
+              <input type="text" id="non-emp-disease" placeholder="โรคประจำตัว (ถ้าไม่มีระบุ ไม่ทราบข้อมูล)" value="ไม่ทราบข้อมูล">
+            </div>
+            <div class="form-group">
+              <label for="non-emp-allergy">ประวัติการแพ้ยา</label>
+              <input type="text" id="non-emp-allergy" placeholder="ยาที่แพ้ (ถ้าไม่มีระบุ ไม่ทราบข้อมูล)" value="ไม่ทราบข้อมูล">
+            </div>
+          </div>
+          
+          <!-- Treatment Info for Non-employee (Direct injection of similar fields) -->
+          <div style="border-top: 1px solid var(--glass-border); padding-top: 20px; margin-top: 20px;">
+            <h4 style="font-weight: 500; font-size: 1.05rem; margin-bottom: 16px; color: var(--accent-color);"><i class="fa-solid fa-notes-medical"></i> บันทึกข้อมูลการรักษา (ไม่ใช่พนักงาน)</h4>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="non-treat-system">ระบบโรค</label>
+                <select id="non-treat-system" class="input-control">
+                  <option value="" disabled selected>-- เลือกระบบโรค --</option>
+                  <option value="ระบบทางเดินอาหาร">ระบบทางเดินอาหาร</option>
+                  <option value="ระบบทางเดินหายใจ">ระบบทางเดินหายใจ</option>
+                  <option value="ระบบประสาท">ระบบประสาท</option>
+                  <option value="ระบบกล้ามเนื้อกระดูก">ระบบกล้ามเนื้อกระดูก</option>
+                  <option value="โรคในช่องปาก">โรคในช่องปาก</option>
+                  <option value="ระบบผิวหนัง">ระบบผิวหนัง</option>
+                  <option value="ระบบทางเดินปัสสาวะ + อวัยวะสืบพันธุ์">ระบบทางเดินปัสสาวะ + อวัยวะสืบพันธุ์</option>
+                  <option value="ระบบตา">ระบบตา</option>
+                  <option value="บาดแผล">บาดแผล</option>
+                  <option value="โรคระบบไหลเวียนเลือด">โรคระบบไหลเวียนเลือด</option>
+                  <option value="ระบบหู คอ จมูก">ระบบหู คอ จมูก</option>
+                  <option value="ความผิดปกติเกี่ยวกับภูมิคุ้มกัน">ความผิดปกติเกี่ยวกับภูมิคุ้มกัน</option>
+                  <option value="อุบัติเหตุจากการทำงาน">อุบัติเหตุจากการทำงาน</option>
+                  <option value="ภาวะแปรปรวนทางจิตและพฤติกรรม">ภาวะแปรปรวนทางจิตและพฤติกรรม</option>
+                  <option value="โรคเลือดและอวัยวะสร้างเลือด">โรคเลือดและอวัยวะสร้างเลือด</option>
+                  <option value="อื่นๆ">อื่นๆ</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="non-treat-shift">กะพนักงาน (Shift)</label>
+                <select id="non-treat-shift" class="input-control">
+                  <option value="A">กะ A (เช้า)</option>
+                  <option value="B">กะ B (บ่าย)</option>
+                  <option value="C">กะ C (ดึก)</option>
+                  <option value="O" selected>กะ O (ปกติ)</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="non-treat-cc">อาการสำคัญ (CC)</label>
+                <textarea id="non-treat-cc" rows="2" placeholder="อธิบายอาการสำคัญ..."></textarea>
+              </div>
+              <div class="form-group">
+                <label for="non-treat-dx">การวินิจฉัย (DX)</label>
+                <textarea id="non-treat-dx" rows="2" placeholder="อธิบายการวินิจฉัย..."></textarea>
+              </div>
+            </div>
+            
+            <!-- Dynamic Medications list for non-employee -->
+            <div class="form-group full-width" style="margin-bottom: 20px;">
+              <label>การจ่ายยา (Medications)</label>
+              <div class="meds-container">
+                <div id="non-medication-rows-container">
+                  <!-- Med rows appended here -->
+                </div>
+                <button class="btn btn-secondary" style="margin-top: 10px; font-size: 0.85rem;" onclick="addMedicationRow(true)"><i class="fa-solid fa-plus"></i> เพิ่มรายการยา</button>
+              </div>
+            </div>
+            
+            <!-- Post Service Status -->
+            <div class="form-group full-width" style="margin-bottom: 24px;">
+              <label>สถานะหลังรับบริการ</label>
+              <div class="status-buttons">
+                <div class="status-btn" data-val="BTW" onclick="selectPostStatus('BTW', true)"><i class="fa-solid fa-briefcase"></i> กลับเข้าปฏิบัติงาน (BTW)</div>
+                <div class="status-btn" data-val="Rest" onclick="selectPostStatus('Rest', true)"><i class="fa-solid fa-bed"></i> พักนอนห้องพยาบาล (Rest)</div>
+                <div class="status-btn" data-val="Refer" onclick="selectPostStatus('Refer', true)"><i class="fa-solid fa-truck-medical"></i> ส่งต่อการรักษา (Refer)</div>
+              </div>
+            </div>
+            
+            <!-- Bed Rest Details for non-employee -->
+            <div id="non-status-rest-panel" class="form-row" style="display: none;">
+              <div class="form-group">
+                <label for="non-rest-start-time">เวลาที่เริ่มนอน</label>
+                <input type="time" id="non-rest-start-time">
+              </div>
+              <div class="form-group">
+                <label for="non-rest-end-time">เวลาสิ้นสุดนอน (สามารถข้ามแล้วบันทึกทีหลังได้)</label>
+                <input type="time" id="non-rest-end-time">
+              </div>
+            </div>
+            
+            <!-- Referral Details for non-employee -->
+            <div id="non-status-refer-panel" class="form-row" style="display: none;">
+              <div class="form-group">
+                <label for="non-refer-hospital-select">ส่งต่อโรงพยาบาล</label>
+                <select id="non-refer-hospital-select" class="input-control" onchange="toggleReferHospitalText(this.value, true)">
+                  <option value="" disabled selected>-- เลือกโรงพยาบาล --</option>
+                  <option value="โรงพยาบาลหริภุญชัย">โรงพยาบาลหริภุญชัย</option>
+                  <option value="โรงพยาบาลลำพูน">โรงพยาบาลลำพูน</option>
+                  <option value="โรงพยาบาลพริ้นซ์ลำพูน">โรงพยาบาลพริ้นซ์ลำพูน</option>
+                  <option value="โรงพยาบาลลำพูนใกล้หมอ">โรงพยาบาลลำพูนใกล้หมอ</option>
+                  <option value="อื่นๆ">โรงพยาบาลอื่นๆ (โปรดระบุ)</option>
+                </select>
+              </div>
+              <div class="form-group" id="non-refer-hospital-other-group" style="display: none;">
+                <label for="non-refer-hospital-other">ระบุชื่อโรงพยาบาล</label>
+                <input type="text" id="non-refer-hospital-other" placeholder="ระบุชื่อโรงพยาบาล...">
+              </div>
+            </div>
+            
+            <!-- Submit Button -->
+            <div style="text-align: right; margin-top: 10px;">
+              <button class="btn btn-success" style="padding: 12px 30px;" onclick="submitTreatmentLog(true)"><i class="fa-solid fa-save"></i> บันทึกข้อมูลการรักษา</button>
+            </div>
+          </div>
+          
+        </div>
+      </section>
+
+      <!-- PAGE 3: SERVICE HISTORY LOG -->
+      <section id="page-service-history" class="tab-page">
+        <div class="glass-card">
+          <h3 class="card-title"><i class="fa-solid fa-clock-rotate-left"></i> ค้นหาประวัติการรับบริการห้องพยาบาล</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="hist-search-id">ระบุรหัสพนักงาน (หรือรหัส A1-A6)</label>
+              <div style="display: flex; gap: 8px; max-width: 400px;">
+                <input type="text" id="hist-search-id" placeholder="รหัสพนักงาน..." oninput="handleEmpIdTyping(this)" onkeyup="if(event.key==='Enter') searchHistory()">
+                <button class="btn" onclick="searchHistory()"><i class="fa-solid fa-magnifying-glass"></i> ค้นหา</button>
+              </div>
+            </div>
+          </div>
+          
+          <div style="margin-top: 24px;">
+            <h4 id="history-table-title" style="font-weight: 600; margin-bottom: 12px; display: none;">รายการประวัติการรับบริการห้องพยาบาล</h4>
+            <div class="table-container">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>วันที่ใช้บริการ</th>
+                    <th>ชื่อ - สกุล</th>
+                    <th>โรคประจำตัว</th>
+                    <th>ยาที่แพ้</th>
+                    <th>กะ / แผนก</th>
+                    <th>ระบบโรค</th>
+                    <th>อาการ (CC) / DX</th>
+                    <th>ยาที่จ่าย</th>
+                    <th>สถานะ / บริการเพิ่มเติม</th>
+                    <th>การทำงาน</th>
+                  </tr>
+                </thead>
+                <tbody id="history-log-tbody">
+                  <tr><td colspan="10" style="text-align: center; color: var(--text-muted);">กรุณาระบุรหัสเพื่อค้นหาประวัติ</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE 4: DASHBOARD ANALYTICS -->
+      <section id="page-dashboard" class="tab-page">
+        
+        <!-- Filter Bar -->
+        <div class="glass-card" style="padding: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <h4 style="font-weight: 600; font-size: 1.05rem;"><i class="fa-solid fa-sliders"></i> คัดกรองช่วงเวลาข้อมูล Dashboard</h4>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-secondary active" id="db-filter-weekly" onclick="changeDashboardFilter('weekly')">รายสัปดาห์</button>
+            <button class="btn btn-secondary" id="db-filter-monthly" onclick="changeDashboardFilter('monthly')">รายเดือน</button>
+            <button class="btn btn-secondary" id="db-filter-yearly" onclick="changeDashboardFilter('yearly')">รายปี</button>
+          </div>
+        </div>
+        
+        <!-- Charts Grid 1 -->
+        <div class="grid-2-equal">
+          <div class="glass-card">
+            <h3 class="card-title"><i class="fa-solid fa-chart-bar"></i> ระบบโรคที่มาบริการบ่อยที่สุด 5 อันดับ</h3>
+            <div style="height: 280px; position: relative;">
+              <canvas id="chart-systems"></canvas>
+            </div>
+          </div>
+          <div class="glass-card">
+            <h3 class="card-title"><i class="fa-solid fa-users"></i> รหัสพนักงานที่มาบ่อยที่สุด 10 อันดับ</h3>
+            <div style="height: 280px; position: relative;">
+              <canvas id="chart-employees"></canvas>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Chart 3 & Department Table -->
+        <div class="grid-2">
+          <div class="glass-card">
+            <h3 class="card-title"><i class="fa-solid fa-hospital"></i> แผนกที่มาห้องพยาบาลบ่อยที่สุด 5 อันดับ</h3>
+            <div style="height: 280px; position: relative;">
+              <canvas id="chart-departments"></canvas>
+            </div>
+          </div>
+          <div class="glass-card">
+            <h3 class="card-title"><i class="fa-solid fa-info-circle"></i> รายละเอียดการวิเคราะห์ตามแผนก</h3>
+            <div class="table-container">
+              <table class="custom-table" style="font-size: 0.85rem;">
+                <thead>
+                  <tr>
+                    <th>แผนก</th>
+                    <th>ยอดใช้บริการ</th>
+                    <th>โรคที่มาบ่อยที่สุด (ระบบ)</th>
+                  </tr>
+                </thead>
+                <tbody id="dept-analysis-tbody">
+                  <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">ไม่มีข้อมูลตามตัวกรองที่เลือก</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE 5: REPORT GENERATOR -->
+      <section id="page-reports" class="tab-page">
+        <div class="glass-card">
+          <h3 class="card-title"><i class="fa-solid fa-filter"></i> คัดกรองและส่งออกรายงานข้อมูล (History)</h3>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="rpt-year">Year (ปี)</label>
+              <select id="rpt-year" class="input-control">
+                <option value="">-- ทั้งหมด --</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026" selected>2026</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="rpt-system">ระบบโรค (Medical System)</label>
+              <select id="rpt-system" class="input-control">
+                <option value="">-- ทั้งหมด --</option>
+                <option value="ระบบทางเดินอาหาร">ระบบทางเดินอาหาร</option>
+                <option value="ระบบทางเดินหายใจ">ระบบทางเดินหายใจ</option>
+                <option value="ระบบประสาท">ระบบประสาท</option>
+                <option value="ระบบกล้ามเนื้อกระดูก">ระบบกล้ามเนื้อกระดูก</option>
+                <option value="โรคในช่องปาก">โรคในช่องปาก</option>
+                <option value="ระบบผิวหนัง">ระบบผิวหนัง</option>
+                <option value="ระบบทางเดินปัสสาวะ + อวัยวะสืบพันธุ์">ระบบทางเดินปัสสาวะ + อวัยวะสืบพันธุ์</option>
+                <option value="ระบบตา">ระบบตา</option>
+                <option value="บาดแผล">บาดแผล</option>
+                <option value="โรคระบบไหลเวียนเลือด">โรคระบบไหลเวียนเลือด</option>
+                <option value="ระบบหู คอ จมูก">ระบบหู คอ จมูก</option>
+                <option value="ความผิดปกติเกี่ยวกับภูมิคุ้มกัน">ความผิดปกติเกี่ยวกับภูมิคุ้มกัน</option>
+                <option value="อุบัติเหตุจากการทำงาน">อุบัติเหตุจากการทำงาน</option>
+                <option value="ภาวะแปรปรวนทางจิตและพฤติกรรม">ภาวะแปรปรวนทางจิตและพฤติกรรม</option>
+                <option value="โรคเลือดและอวัยวะสร้างเลือด">โรคเลือดและอวัยวะสร้างเลือด</option>
+                <option value="อื่นๆ">อื่นๆ</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="rpt-dept">แผนก (Department)</label>
+              <input type="text" id="rpt-dept" placeholder="พิมพ์ชื่อแผนกเพื่อกรอง...">
+            </div>
+            
+            <div class="form-group">
+              <label for="rpt-month">Month (เดือน)</label>
+              <select id="rpt-month" class="input-control">
+                <option value="">-- ทั้งหมด --</option>
+                <option value="1">มกราคม (Jan)</option>
+                <option value="2">กุมภาพันธ์ (Feb)</option>
+                <option value="3">มีนาคม (Mar)</option>
+                <option value="4">เมษายน (Apr)</option>
+                <option value="5">พฤษภาคม (May)</option>
+                <option value="6">มิถุนายน (Jun)</option>
+                <option value="7">กรกฎาคม (Jul)</option>
+                <option value="8">สิงหาคม (Aug)</option>
+                <option value="9">กันยายน (Sep)</option>
+                <option value="10">ตุลาคม (Oct)</option>
+                <option value="11">พฤศจิกายน (Nov)</option>
+                <option value="12">ธันวาคม (Dec)</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="rpt-day">Day (วันที่)</label>
+              <input type="number" id="rpt-day" min="1" max="31" placeholder="ระบุวันที่ 1-31...">
+            </div>
+          </div>
+          
+          <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px;">
+            <button class="btn btn-secondary" onclick="resetReportFilters()"><i class="fa-solid fa-rotate-left"></i> รีเซ็ตตัวกรอง</button>
+            <button class="btn" onclick="generateReport()"><i class="fa-solid fa-filter-circle-dollar"></i> แสดงผลรายงาน</button>
+            <button class="btn btn-success" onclick="exportReportToCSV()"><i class="fa-solid fa-file-excel"></i> ส่งออก CSV</button>
+          </div>
+          
+          <div style="margin-top: 24px;">
+            <div class="table-container">
+              <table class="custom-table" id="report-table">
+                <thead>
+                  <tr>
+                    <th>วันที่ใช้บริการ</th>
+                    <th>รหัสพนักงาน</th>
+                    <th>ชื่อ - สกุล</th>
+                    <th>Shift</th>
+                    <th>แผนก</th>
+                    <th>อาการสำคัญ (CC)</th>
+                    <th>ระบบโรค</th>
+                    <th>BTW</th>
+                    <th>Refer (รพ.)</th>
+                    <th>Rest (เวลานอน)</th>
+                    <th>Acc (อุบัติเหตุงาน)</th>
+                  </tr>
+                </thead>
+                <tbody id="report-tbody">
+                  <tr><td colspan="11" style="text-align: center; color: var(--text-muted);">กรุณากด 'แสดงผลรายงาน' เพื่อเรียกดูข้อมูล</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE 6: MEDICINE STOCK -->
+      <section id="page-stock" class="tab-page">
+        <div class="grid-2">
+          
+          <!-- Column 1: Medicine Inventory Cards -->
+          <div>
+            <div class="glass-card">
+              <h3 class="card-title"><i class="fa-solid fa-prescription-bottle-medical"></i> รายการเวชภัณฑ์และคลังยา</h3>
+              <div class="form-row" style="margin-bottom: 20px;">
+                <div class="form-group">
+                  <input type="text" id="stock-search" placeholder="พิมพ์เพื่อค้นหาชื่อยา..." oninput="filterStockList(this.value)">
+                </div>
+              </div>
+              <div class="stock-grid" id="meds-stock-grid">
+                <!-- Stock cards dynamically appended -->
+              </div>
+            </div>
+          </div>
+          
+          <!-- Column 2: Refill stock & medication report -->
+          <div>
+            <!-- Refill medicine -->
+            <div class="glass-card">
+              <h3 class="card-title"><i class="fa-solid fa-plus-circle"></i> รับยาเพิ่มเข้าคลังสต๊อก (Refill Stock)</h3>
+              <div class="form-group" style="margin-bottom: 16px;">
+                <label for="refill-med-name">เลือกชื่อยาเวชภัณฑ์</label>
+                <select id="refill-med-name" class="input-control">
+                  <option value="" disabled selected>-- ค้นหาหรือเลือกชื่อยา --</option>
+                  <!-- prefilled in init -->
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 20px;">
+                <label for="refill-med-qty">ระบุจำนวนที่สั่งซื้อเพิ่มเติม</label>
+                <input type="number" id="refill-med-qty" min="1" placeholder="เช่น 500">
+              </div>
+              <button class="btn btn-success" style="width: 100%;" onclick="submitRefillStock()"><i class="fa-solid fa-save"></i> บันทึกรับยาเพิ่มเข้าคลัง</button>
+            </div>
+            
+            <!-- Monthly/Yearly Dispensed Statistics -->
+            <div class="glass-card">
+              <h3 class="card-title"><i class="fa-solid fa-chart-line"></i> สรุปสถิติการจ่ายยารายตัว</h3>
+              <div class="form-group" style="margin-bottom: 16px;">
+                <label for="stat-med-name">เลือกตัวยาเวชภัณฑ์</label>
+                <select id="stat-med-name" class="input-control" onchange="loadMedicationDispensedStats()">
+                  <option value="" disabled selected>-- เลือกชื่อยา --</option>
+                  <!-- prefilled -->
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 16px;">
+                <label>ช่วงการแยกยอด</label>
+                <div style="display: flex; gap: 8px;">
+                  <button class="btn btn-secondary active" id="med-stat-monthly" onclick="changeMedStatFilter('monthly')">รายเดือน</button>
+                  <button class="btn btn-secondary" id="med-stat-yearly" onclick="changeMedStatFilter('yearly')">รายปี</button>
+                </div>
+              </div>
+              
+              <div class="table-container" style="max-height: 250px;">
+                <table class="custom-table" style="font-size: 0.85rem;">
+                  <thead>
+                    <tr>
+                      <th>ช่วงเวลา (Label)</th>
+                      <th>จำนวนจ่ายสะสม (เม็ด/ชิ้น)</th>
+                    </tr>
+                  </thead>
+                  <tbody id="med-stats-tbody">
+                    <tr><td colspan="2" style="text-align: center; color: var(--text-muted);">เลือกเวชภัณฑ์เพื่อดูยอดการจ่ายยา</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- EDIT / BED TIME MODAL -->
+  <div id="edit-record-modal" class="modal-backdrop">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h4 class="modal-title" id="edit-modal-title"><i class="fa-solid fa-edit"></i> แก้ไขข้อมูลและลงบันทึกเวลาย้อนหลัง</h4>
+        <button class="close-modal-btn" onclick="closeEditModal()"><i class="fa-solid fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-row-id">
+        <div class="form-row">
+          <div class="form-group">
+            <label>รหัสผู้ใช้บริการ</label>
+            <input type="text" id="edit-emp-id" readonly>
+          </div>
+          <div class="form-group">
+            <label>ชื่อ</label>
+            <input type="text" id="edit-name">
+          </div>
+          <div class="form-group">
+            <label>นามสกุล</label>
+            <input type="text" id="edit-surname">
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>กะพนักงาน</label>
+            <select id="edit-shift" class="input-control">
+              <option value="A">กะ A (เช้า)</option>
+              <option value="B">กะ B (บ่าย)</option>
+              <option value="C">กะ C (ดึก)</option>
+              <option value="O">กะ O (ปกติ)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>แผนก</label>
+            <input type="text" id="edit-dept">
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>โรคประจำตัว</label>
+            <input type="text" id="edit-disease">
+          </div>
+          <div class="form-group">
+            <label>ยาที่แพ้</label>
+            <input type="text" id="edit-allergy">
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>ระบบโรค</label>
+            <select id="edit-system" class="input-control">
+              <option value="ระบบทางเดินอาหาร">ระบบทางเดินอาหาร</option>
+              <option value="ระบบทางเดินหายใจ">ระบบทางเดินหายใจ</option>
+              <option value="ระบบประสาท">ระบบประสาท</option>
+              <option value="ระบบกล้ามเนื้อกระดูก">ระบบกล้ามเนื้อกระดูก</option>
+              <option value="โรคในช่องปาก">โรคในช่องปาก</option>
+              <option value="ระบบผิวหนัง">ระบบผิวหนัง</option>
+              <option value="ระบบทางเดินปัสสาวะ + อวัยวะสืบพันธุ์">ระบบทางเดินปัสสาวะ + อวัยวะสืบพันธุ์</option>
+              <option value="ระบบตา">ระบบตา</option>
+              <option value="บาดแผล">บาดแผล</option>
+              <option value="โรคระบบไหลเวียนเลือด">โรคระบบไหลเวียนเลือด</option>
+              <option value="ระบบหู คอ จมูก">ระบบหู คอ จมูก</option>
+              <option value="ความผิดปกติเกี่ยวกับภูมิคุ้มกัน">ความผิดปกติเกี่ยวกับภูมิคุ้มกัน</option>
+              <option value="อุบัติเหตุจากการทำงาน">อุบัติเหตุจากการทำงาน</option>
+              <option value="ภาวะแปรปรวนทางจิตและพฤติกรรม">ภาวะแปรปรวนทางจิตและพฤติกรรม</option>
+              <option value="โรคเลือดและอวัยวะสร้างเลือด">โรคเลือดและอวัยวะสร้างเลือด</option>
+              <option value="อื่นๆ">อื่นๆ</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>สถานะหลังรับบริการ</label>
+            <select id="edit-status" class="input-control" onchange="toggleEditStatusPanels(this.value)">
+              <option value="BTW">BTW กลับเข้าทำงาน</option>
+              <option value="Rest">Rest พักนอนห้องพยาบาล</option>
+              <option value="Refer">Refer ส่งตัวรักษา</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>อาการสำคัญ (CC)</label>
+            <textarea id="edit-cc" rows="2"></textarea>
+          </div>
+          <div class="form-group">
+            <label>การวินิจฉัย (DX)</label>
+            <textarea id="edit-dx" rows="2"></textarea>
+          </div>
+        </div>
+        
+        <!-- Rest details in edit -->
+        <div id="edit-rest-panel" class="form-row" style="display: none;">
+          <div class="form-group">
+            <label>เวลาที่เริ่มนอน</label>
+            <input type="time" id="edit-bed-start">
+          </div>
+          <div class="form-group">
+            <label>เวลาที่สิ้นสุดการนอน</label>
+            <input type="time" id="edit-bed-end">
+          </div>
+        </div>
+        
+        <!-- Refer details in edit -->
+        <div id="edit-refer-panel" class="form-row" style="display: none;">
+          <div class="form-group">
+            <label>ระบุโรงพยาบาลที่ส่งตัว</label>
+            <input type="text" id="edit-refer-hospital" placeholder="เช่น รพ.ลำพูน...">
+          </div>
+        </div>
+        
+        <!-- Medication management in edit -->
+        <div class="form-group" style="margin-top: 12px;">
+          <label>ประวัติยาที่จ่ายเดิม (หากมีการแก้ไขจะหักลบและเติมคลังเก่าคืนอัตโนมัติ)</label>
+          <div class="meds-container">
+            <div id="edit-medication-rows-container">
+              <!-- rows -->
+            </div>
+            <button class="btn btn-secondary" style="margin-top: 10px; font-size: 0.85rem;" onclick="addMedicationRow(false, true)"><i class="fa-solid fa-plus"></i> เพิ่มรายการยา</button>
+          </div>
+        </div>
+        
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeEditModal()">ยกเลิก</button>
+        <button class="btn btn-success" onclick="saveEditedRecord()"><i class="fa-solid fa-check"></i> บันทึกข้อมูลที่แก้ไข</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // Predefined 49 Medicines Array for dropdown rendering
+    const MEDICINE_LIST = [
+      "N.S.S. 450ml. 24's K&K.",
+      "N.S.S. 100ml. 24's K&K.",
+      "LORATADINE LORANOX 10mg. 20x10's S.CHAROEN",
+      "MYDOCALM TANDERON 500's PHARMALAND",
+      "ALCOHOL 70% 450ml. 24's LEOPARD",
+      "ALCOHOL 70% 30ml.12's SIRIBUNCHA",
+      "BELCID 240ml. 20's BIOLAB(ALUM MILK)",
+      "BALM GOLDEN 2g. 12's",
+      "BEMETH-N CREAM 450g. IMEX(BETAMETHASONE-N)",
+      "BISOLVON BROMHEXINE 1000's NL.",
+      "OP-IZE EYE WASH 110ml. 1x18bott ANB",
+      "BRUFEN PROZONE 400mg.50x10's AU",
+      "BUSCOPAN CENCOPAN 10mg.50x10's CPL.",
+      "CALAMINE LOTION 60ml. 6's LEOPARD",
+      "C.P.M.4mg. 1000's AU ฝานําเงิน",
+      "COTTON BALL 450 GM",
+      "COUNTERPAIN 120g. 24's TAISHO",
+      "DRAMAMINE DIMEN 1000's AU.",
+      "VOLTAREN DIFENAC 25mg.1000's AU.",
+      "GLOVE POWDER Size M 100's PROXAM",
+      "MOTILIUM MOTIDOM-M 50x10's TO.",
+      "ELASTIC BANDAGE 3\" UTD",
+      "ELASTIC BANDAGE 4\" UTD",
+      "ORS.0reda3.3gรสส้ม100's",
+      "EYE PAD Sterile 25's TG.",
+      "AIR-X MINT 50x10's RX",
+      "GAUZE Pad Non-Sterile 2\"x2\"-8Ply 10x10's China",
+      "GAUZE Pad Non-Sterile 3\"x3\"-8Ply 10x10's China",
+      "HISTA OPH Eye Drop 5ml. 12's SANG THAI",
+      "KANOLONE CREAM 1g. 1x50's LBS",
+      "M.CARMINATIVE 450ml. 12's GPO.",
+      "MICROPORE 1\"x10Yds. 12's 3M",
+      "PARA CEMOL 500mg.1000's CPL.",
+      "PLASTIC BAG \"S\" 100's 6x8cm. LOCAL",
+      "PLASTIC BOTTLE 60ml.100's LOCAL(ขายยกแพ็ค)",
+      "PLASTIC CREAM BOX 5g.100's LOCAL(ขายยกแพ็ค)",
+      "PONSTAN NEOPAIN 500mg. 500's NL.",
+      "SILVERDERM CREAM 25g. 6's TO.",
+      "TENSOPLAST 100's ผ้า PMC.(Smith ขายยกกลอง)",
+      "TRANSPORE 1\"x10Yds.12's 3M",
+      "YAHOM BAG 3g. 12's (5 JADEE)",
+      "COTTON STICK \"M\" 10x100's SERVA",
+      "M.TUSSIS 3800ml. SNAKE BRAND",
+      "CONFORM 2\" 12's ZD.",
+      "OMEPRAZOLE 20mg. 10x10's องค์การเภสัช",
+      "AMMONIA 30ml. 12's วิทยาศรม",
+      "BETADINE POLIDINE Solution 30ml. 12's NL.",
+      "CA-R-BON 260mg.10x10's GREATER(ULTRACARBON)",
+      "สเปรย์เย็น"
+    ];
+
+    // ----------------- API Integration Configuration -----------------
+    // Enter your deployed Google Apps Script Web App URL here.
+    // Example: https://script.google.com/macros/s/AKfycb.../exec
+    const API_URL = "https://script.google.com/macros/s/AKfycbxyzqy2ueOGHDbalkFVWxeD0WC64S0XBTB_BnAmLwUu-2x9NGtqm9MhHbmYt-iT4nXkeg/exec";
+    
+    // Check if we are running outside the Google Apps Script Container environment
+    if (typeof google === 'undefined' || window.location.hostname !== 'script.google.com') {
+      console.log("Running outside Google Apps Script environment.");
+      
+      const mockHistory = [
+        {
+          id: "003049|27/7/2026|15.25|ระบบประสาท",
+          date: new Date(),
+          dateStr: "27/7/2026",
+          time: 15.25,
+          empId: "003049",
+          name: "วิชัย",
+          surname: "สุขประเสริฐกุล",
+          shift: "d",
+          department: "OPT",
+          congenitalDisease: "ความดันโลหิตสูง",
+          drugAllergies: "พาราเซตามอล",
+          system: "ระบบประสาท",
+          cc: "ปวดศีรษะ ข้างซ้าย",
+          dx: "ไมเกรน",
+          medication: "MYDOCALM TANDERON 500's PHARMALAND (2)",
+          status: "BTW",
+          bedStartTime: "",
+          bedEndTime: "",
+          referHospital: "",
+          acc: "No"
+        }
+      ];
+      
+      const mockMedsStock = MEDICINE_LIST.map(med => ({
+        name: med,
+        current: 480,
+        unit: "เม็ด",
+        threshold: 50,
+        dispensed: 20,
+        isLow: false
+      }));
+
+      // Define standard google.script.run interface
+      window.google = {
+        script: {
+          run: {
+            withSuccessHandler: function(successCallback) {
+              this._success = successCallback;
+              return this;
+            },
+            withFailureHandler: function(failureCallback) {
+              this._failure = failureCallback;
+              return this;
+            },
+            
+            // Core router for mock/live calls
+            _call: async function(action, args) {
+              const success = this._success;
+              const failure = this._failure;
+              this._success = null;
+              this._failure = null;
+              
+              const isPlaceholderUrl = !API_URL || API_URL.trim() === "" || API_URL.includes("YOUR_API_URL");
+              
+              if (isPlaceholderUrl) {
+                // 1. Run local mock logic
+                this._runMock(action, args, success, failure);
+              } else {
+                // 2. Fetch live data from API_URL (Google Apps Script Web App)
+                try {
+                  const response = await fetch(API_URL, {
+                    method: "POST",
+                    body: JSON.stringify({ action: action, args: args })
+                  });
+                  
+                  const text = await response.text();
+                  let json;
+                  try {
+                    json = JSON.parse(text);
+                  } catch(e) {
+                    console.error("Failed to parse JSON response:", text);
+                    let errMsg = "การตั้งค่า Web App ไม่ถูกต้อง: ระบบไม่ได้ส่งค่ากลับมาเป็น JSON (อาจเนื่องจากสิทธิ์การ Deploy ไม่ใช่ 'Anyone (ทุกคน)' หรือโครงการ Apps Script ยังไม่ได้รับสิทธิ์เข้าถึง)";
+                    alert(errMsg);
+                    if (failure) failure(new Error(errMsg));
+                    return;
+                  }
+                  
+                  if (json.success) {
+                    if (success) success(json.data);
+                  } else {
+                    alert("เกิดข้อผิดพลาดจากเซิร์ฟเวอร์: " + json.error);
+                    if (failure) failure(new Error(json.error));
+                  }
+                } catch (err) {
+                  console.error("API Call Failed:", err);
+                  let errorDetails = err.message || err.toString();
+                  let promptMsg = "ไม่สามารถเชื่อมต่อไปยัง Google Sheets API ได้:\n\n";
+                  
+                  if (window.location.protocol === 'file:') {
+                    promptMsg += "🚨 เนื่องจากคุณเปิดไฟล์ด้วยลิงก์เครื่องคอมพิวเตอร์ (file://) บราว์เซอร์จะบล็อกการดึงข้อมูลเพื่อความปลอดภัย (CORS บล็อก)\n\n" +
+                                 "👉 วิธีแก้ไข:\n" +
+                                 "1. แนะนำให้อัปโหลดไฟล์ index.html ขึ้น GitHub Pages แล้วทดสอบรันด้วยลิงก์ HTTPS จริง\n" +
+                                 "2. หรือตรวจสอบว่าลิงก์ API ถูกต้องและตั้งค่า Deploy เป็น Anyone (ทุกคน) หรือยัง\n\n";
+                  } else {
+                    promptMsg += "🚨 อาจเกิดจากสิทธิ์ในการเข้าถึงของ Web App หรือการระบุลิงก์ API ผิดพลาด\n\n";
+                  }
+                  
+                  promptMsg += "รายละเอียดข้อผิดพลาด: " + errorDetails;
+                  alert(promptMsg);
+                  if (failure) failure(err);
+                }
+              }
+            },
+            
+            // Local mock responder
+            _runMock: function(action, args, success, failure) {
+              console.log(`[Mock API] Executing ${action}`, args);
+              if (action === "checkLogin") {
+                setTimeout(() => success(args[0] === "hananurse"), 400);
+              } else if (action === "initializeSheets") {
+                setTimeout(() => success("Initialized Mock Sheets"), 100);
+              } else if (action === "getEmployeeData") {
+                setTimeout(() => {
+                  const padId = String(args[0]).padStart(6, '0');
+                  const res = {
+                    found: padId === "003049",
+                    empId: padId,
+                    name: padId === "003049" ? "วิชัย" : "",
+                    surname: padId === "003049" ? "สุขประเสริฐกุล" : "",
+                    department: padId === "003049" ? "OPT" : "",
+                    congenitalDisease: padId === "003049" ? "ความดันโลหิตสูง" : "ไม่ทราบข้อมูล",
+                    drugAllergies: padId === "003049" ? "พาราเซตามอล" : "ไม่ทราบข้อมูล",
+                    historyStats: { "2024": 2, "2025": 1, "2026": 1 },
+                    latest3History: [
+                      { date: new Date(), system: "ระบบประสาท", symptom: "ปวดศีรษะ ข้างซ้าย" }
+                    ],
+                    checkups: [
+                      {
+                        year: "2025", disease: "ความดันโลหิตสูง", allergy: "พาราเซตามอล",
+                        physical: "ปกติ", smoke: "ไม่สูบ", drink: "ไม่ดื่ม", colorBlind: "ปกติ",
+                        weight: "72", height: "170", bmi: "24.9", bmiInterpretation: "น้ำหนักเกิน",
+                        eyeComputer: "ปกติ", cbc: "ปกติ", ua: "ปกติ", xray: "ปกติ", lipid: "ปกติ",
+                        sugarUA: "ปกติ", liver: "ปกติ", kidney: "ปกติ", uric: "ปกติ"
+                      }
+                    ],
+                    warning: true,
+                    warningMessage: "พนักงานรายนี้มารับบริการห้องพยาบาลแล้ว 4 ครั้ง"
+                  };
+                  success(res);
+                }, 800);
+              } else if (action === "saveVisitRecord") {
+                setTimeout(() => success({ success: true, message: "บันทึกข้อมูลการรักษาสำเร็จ (Mock Mode)" }), 600);
+              } else if (action === "getServiceHistory") {
+                setTimeout(() => success(mockHistory.filter(h => h.empId === args[0])), 600);
+              } else if (action === "getDashboardData") {
+                setTimeout(() => success({
+                  systems: [{ name: "ระบบประสาท", count: 12 }, { name: "ระบบกล้ามเนื้อกระดูก", count: 8 }],
+                  employees: [{ empId: "003049", count: 4 }],
+                  departments: [{ name: "OPT", count: 10, topSystem: "ระบบประสาท", topSystemCount: 5 }]
+                }), 500);
+              } else if (action === "getReportData") {
+                setTimeout(() => success(mockHistory), 500);
+              } else if (action === "getMedicineStock") {
+                setTimeout(() => success(mockMedsStock), 500);
+              } else if (action === "addMedicineStock") {
+                setTimeout(() => success({ success: true, message: `เติมยาสำเร็จ (Mock)` }), 500);
+              } else if (action === "getMedicationHistoryData") {
+                setTimeout(() => success([{ label: "2026-07", qty: 25 }]), 400);
+              } else if (action === "editHistoryRecord") {
+                setTimeout(() => success({ success: true, message: "แก้ไขสำเร็จ (Mock)" }), 500);
+              } else if (action === "deleteHistoryRecord") {
+                setTimeout(() => success({ success: true, message: "ลบสำเร็จ (Mock)" }), 500);
+              } else if (action === "updateBedEndTime") {
+                setTimeout(() => success({ success: true, message: "อัปเดตเวลานอนสำเร็จ (Mock)" }), 500);
+              }
+            },
+            
+            // Function bindings
+            checkLogin: function(pwd) { this._call("checkLogin", [pwd]); },
+            initializeSheets: function() { this._call("initializeSheets", []); },
+            getEmployeeData: function(id) { this._call("getEmployeeData", [id]); },
+            saveVisitRecord: function(data) { this._call("saveVisitRecord", [data]); },
+            updateBedEndTime: function(id, time) { this._call("updateBedEndTime", [id, time]); },
+            getServiceHistory: function(id) { this._call("getServiceHistory", [id]); },
+            editHistoryRecord: function(data) { this._call("editHistoryRecord", [data]); },
+            deleteHistoryRecord: function(id) { this._call("deleteHistoryRecord", [id]); },
+            getDashboardData: function(type) { this._call("getDashboardData", [type]); },
+            getReportData: function(filters) { this._call("getReportData", [filters]); },
+            getMedicineStock: function() { this._call("getMedicineStock", []); },
+            addMedicineStock: function(name, qty) { this._call("addMedicineStock", [name, qty]); },
+            getMedicationHistoryData: function(name, type) { this._call("getMedicationHistoryData", [name, type]); }
+          }
+        }
+      };
+    }
+
+    // Global States
+    let currentEmployeeData = null;
+    let selectedPostStatusVal = "BTW";
+    let selectedNonEmpPostStatusVal = "BTW";
+    let currentDashboardFilter = "weekly";
+    let currentMedStatFilter = "monthly";
+    let cachedMedStock = [];
+    let charts = {};
+    let isNewEmployeeFlag = false;
+
+    // Run when DOM is fully loaded
+    window.onload = function() {
+      // Setup time clock updates
+      updateDateTime();
+      setInterval(updateDateTime, 1000);
+      
+      // Auto fill medicine lists in dropdowns
+      populateMedicationDropdowns();
+      
+      // Try auto login from localStorage for nurse convenience (mock state)
+      if (localStorage.getItem("hananurse_authenticated") === "true") {
+        document.getElementById("login-screen").style.opacity = "0";
+        setTimeout(() => {
+          document.getElementById("login-screen").style.visibility = "hidden";
+        }, 500);
+      }
+    };
+
+    // Update Top right Date / Time
+    function updateDateTime() {
+      const now = new Date();
+      
+      // Time format
+      let h = now.getHours();
+      let m = now.getMinutes();
+      let s = now.getSeconds();
+      h = h < 10 ? '0' + h : h;
+      m = m < 10 ? '0' + m : m;
+      s = s < 10 ? '0' + s : s;
+      document.getElementById("current-time").innerText = `${h}:${m}:${s}`;
+      
+      // Date format
+      const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+      document.getElementById("current-date").innerText = now.toLocaleDateString('th-TH', options);
+    }
+
+    // Attempt Login
+    function attemptLogin() {
+      const pwd = document.getElementById("password-input").value;
+      showLoading(true, "กำลังตรวจสอบสิทธิ์...");
+      
+      // Run GAS call to authenticate
+      google.script.run
+        .withSuccessHandler(function(isSuccess) {
+          showLoading(false);
+          if (isSuccess) {
+            localStorage.setItem("hananurse_authenticated", "true");
+            document.getElementById("login-screen").style.opacity = "0";
+            setTimeout(() => {
+              document.getElementById("login-screen").style.visibility = "hidden";
+            }, 500);
+            showToast("เข้าสู่ระบบเรียบร้อย ยินดีต้อนรับครับ", "success");
+            
+            // Auto initialize sheets after successful login
+            google.script.run.withSuccessHandler((r)=>console.log(r)).initializeSheets();
+          } else {
+            const err = document.getElementById("login-error-msg");
+            err.style.display = "block";
+            setTimeout(() => { err.style.display = "none"; }, 5000);
+            showToast("รหัสผ่านผิดพลาด กรุณาลองใหม่อีกครั้ง", "danger");
+          }
+        })
+        .withFailureHandler(function(error) {
+          showLoading(false);
+          showToast("ล้มเหลวในการเชื่อมต่อเซิร์ฟเวอร์", "danger");
+        })
+        .checkLogin(pwd);
+    }
+    
+    // Logout
+    function logout() {
+      localStorage.removeItem("hananurse_authenticated");
+      document.getElementById("password-input").value = "";
+      document.getElementById("login-screen").style.visibility = "visible";
+      document.getElementById("login-screen").style.opacity = "1";
+      showToast("ออกจากระบบแล้ว", "warning");
+    }
+
+    // Switch Tabs
+    function switchTab(tabId) {
+      // Update Sidebar Items
+      document.querySelectorAll(".nav-item").forEach(item => {
+        item.classList.remove("active");
+      });
+      event.currentTarget.classList.add("active");
+      
+      // Hide All pages
+      document.querySelectorAll(".tab-page").forEach(page => {
+        page.classList.remove("active");
+      });
+      
+      // Show targeted page
+      const targetedPage = document.getElementById("page-" + tabId);
+      targetedPage.classList.add("active");
+      
+      // Change header title
+      const titles = {
+        'emp-entry': 'ลงข้อมูลพนักงาน Hana',
+        'non-emp-entry': 'ลงข้อมูลไม่ใช่พนักงาน',
+        'service-history': 'ประวัติการรับบริการ',
+        'dashboard': 'Dashboard สรุปผล',
+        'reports': 'หน้า Report',
+        'stock': 'สต๊อกยาห้องพยาบาล'
+      };
+      document.getElementById("page-title").innerText = titles[tabId] || 'ห้องพยาบาล';
+      
+      // Trigger lazy loaded content for specific tabs
+      if (tabId === 'dashboard') {
+        loadDashboardData();
+      } else if (tabId === 'stock') {
+        loadMedicineStockData();
+      }
+    }
+
+    // Show/Hide Loading Overlay
+    function showLoading(show, text = "กำลังประมวลผลข้อมูล...") {
+      const overlay = document.getElementById("loading-overlay");
+      document.getElementById("loading-text").innerText = text;
+      if (show) {
+        overlay.classList.add("active");
+      } else {
+        overlay.classList.remove("active");
+      }
+    }
+
+    // Toast Alerts
+    function showToast(msg, type = "success") {
+      const container = document.getElementById("toast-container");
+      const toast = document.createElement("div");
+      toast.className = `toast ${type}`;
+      
+      let icon = "fa-circle-check";
+      if (type === "danger") icon = "fa-circle-xmark";
+      if (type === "warning") icon = "fa-circle-exclamation";
+      
+      toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${msg}</span>`;
+      container.appendChild(toast);
+      
+      // Auto-remove after 4 seconds
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateX(100%)";
+        toast.style.transition = "opacity 0.4s, transform 0.4s";
+        setTimeout(() => toast.remove(), 400);
+      }, 4000);
+    }
+
+    // Populate Medication dropdown options
+    function populateMedicationDropdowns() {
+      const dropdowns = [
+        document.getElementById("refill-med-name"),
+        document.getElementById("stat-med-name")
+      ];
+      
+      dropdowns.forEach(drop => {
+        if (!drop) return;
+        drop.innerHTML = `<option value="" disabled selected>-- ค้นหาหรือเลือกชื่อยา --</option>`;
+        MEDICINE_LIST.forEach(med => {
+          drop.innerHTML += `<option value="${med}">${med}</option>`;
+        });
+      });
+    }
+
+    /* =========================================================================
+       PAGE 1: HANA EMPLOYEE ENTRY
+       ========================================================================= */
+       
+    // Auto-pad search ID typing
+    function handleEmpIdTyping(input) {
+      input.value = input.value.replace(/\s+/g, ''); // no spaces
+    }
+    
+    // Search Employee
+    function searchEmployee() {
+      const empIdVal = document.getElementById("emp-id-input").value.trim();
+      if (!empIdVal) {
+        showToast("กรุณาระบุรหัสพนักงานเพื่อค้นหา", "warning");
+        return;
+      }
+      
+      showLoading(true, "กำลังดึงข้อมูลพนักงาน...");
+      
+      // GAS Call
+      google.script.run
+        .withSuccessHandler(function(response) {
+          showLoading(false);
+          currentEmployeeData = response;
+          isNewEmployeeFlag = !response.found;
+          
+          // Clear inputs
+          document.getElementById("emp-id-input").value = response.empId; // padded value
+          document.getElementById("emp-name").value = response.name;
+          document.getElementById("emp-surname").value = response.surname;
+          document.getElementById("emp-dept").value = response.department;
+          
+          // Disease & Allergy: default to "ไม่ทราบข้อมูล" if blank
+          document.getElementById("emp-disease").value = response.congenitalDisease || "ไม่ทราบข้อมูล";
+          document.getElementById("emp-allergy").value = response.drugAllergies || "ไม่ทราบข้อมูล";
+          
+          // Setup ReadOnly if name found
+          if (response.found) {
+            document.getElementById("emp-name").readOnly = true;
+            document.getElementById("emp-surname").readOnly = true;
+            document.getElementById("emp-dept").readOnly = true;
+            showToast("พบข้อมูลพนักงานในระบบเรียบร้อย", "success");
+          } else {
+            document.getElementById("emp-name").readOnly = false;
+            document.getElementById("emp-surname").readOnly = false;
+            document.getElementById("emp-dept").readOnly = false;
+            showToast("ไม่พบรหัสพนักงานในฐานข้อมูล สามารถระบุข้อมูลใหม่ลงฟอร์มได้", "warning");
+          }
+          
+          // Toggle Forms Visibility
+          document.getElementById("emp-details-form").style.display = "block";
+          document.getElementById("visit-history-card").style.display = "block";
+          document.getElementById("treatment-entry-card").style.display = "block";
+          document.getElementById("checkup-history-card").style.display = "block";
+          
+          // Warning on 3+ visits
+          const warningBanner = document.getElementById("visit-warning-banner");
+          if (response.warning) {
+            warningBanner.style.display = "flex";
+            document.getElementById("visit-warning-text").innerText = response.warningMessage;
+            // Play alert sound or trigger dynamic alert modal
+          } else {
+            warningBanner.style.display = "none";
+          }
+          
+          // Set visit summaries
+          document.getElementById("stats-2024").innerText = response.historyStats["2024"] || 0;
+          document.getElementById("stats-2025").innerText = response.historyStats["2025"] || 0;
+          document.getElementById("stats-2026").innerText = response.historyStats["2026"] || 0;
+          
+          // Set latest 3 visits table
+          const tbody = document.getElementById("latest-visits-tbody");
+          tbody.innerHTML = "";
+          if (response.latest3History && response.latest3History.length > 0) {
+            response.latest3History.forEach(visit => {
+              const formattedDate = new Date(visit.date).toLocaleDateString('th-TH', {
+                year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+              });
+              tbody.innerHTML += `
+                <tr>
+                  <td>${formattedDate}</td>
+                  <td><span class="status-btn active" style="padding:4px 8px; font-size:0.75rem; border-radius:6px;">${visit.system}</span></td>
+                  <td>${visit.symptom}</td>
+                </tr>
+              `;
+            });
+          } else {
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">ไม่มีประวัติการบันทึก</td></tr>`;
+          }
+          
+          // Load Checkups Year Tabs
+          loadCheckupDataTabs(response.checkups);
+          
+          // Initialize empty medications list for new treatment
+          document.getElementById("medication-rows-container").innerHTML = "";
+          addMedicationRow(false);
+          
+          // Set default start bed time
+          const startInput = document.getElementById("rest-start-time");
+          const now = new Date();
+          let hour = String(now.getHours()).padStart(2, '0');
+          let min = String(now.getMinutes()).padStart(2, '0');
+          startInput.value = `${hour}:${min}`;
+        })
+        .withFailureHandler(function(err) {
+          showLoading(false);
+          showToast("เกิดข้อผิดพลาดในการโหลดข้อมูล", "danger");
+        })
+        .getEmployeeData(empIdVal);
+    }
+    
+    // Load Checkups Tabs & Contents
+    function loadCheckupDataTabs(checkups) {
+      const tabsContainer = document.getElementById("checkup-years-tabs");
+      const contentContainer = document.getElementById("checkup-details-content");
+      
+      tabsContainer.innerHTML = "";
+      
+      if (!checkups || checkups.length === 0) {
+        contentContainer.innerHTML = `<p style="text-align: center; color: var(--text-muted);">ไม่มีข้อมูลประวัติผลการตรวจสุขภาพ (ไม่พบในฐานข้อมูลชีต Checkup)</p>`;
+        return;
+      }
+      
+      checkups.forEach((chk, index) => {
+        tabsContainer.innerHTML += `
+          <button class="btn btn-secondary ${index===0?'btn-success':''}" onclick="selectCheckupYear(this, ${index})" data-index="${index}">${chk.year}</button>
+        `;
+      });
+      
+      // Store globally for quick access
+      window.cachedCheckups = checkups;
+      renderCheckupDetails(0);
+    }
+    
+    function selectCheckupYear(button, index) {
+      // Toggle active states
+      document.querySelectorAll("#checkup-years-tabs button").forEach(btn => {
+        btn.className = "btn btn-secondary";
+      });
+      button.className = "btn btn-success";
+      renderCheckupDetails(index);
+    }
+    
+    function renderCheckupDetails(index) {
+      const chk = window.cachedCheckups[index];
+      const contentContainer = document.getElementById("checkup-details-content");
+      if (!chk) return;
+      
+      contentContainer.innerHTML = `
+        <div class="info-list-item"><span class="info-label">ปีที่ตรวจสุขภาพ:</span><span class="info-val" style="color:var(--success-color); font-weight:600;">${chk.year}</span></div>
+        <div class="info-list-item"><span class="info-label">โรคประจำตัว:</span><span class="info-val">${chk.disease}</span></div>
+        <div class="info-list-item"><span class="info-label">ยาที่แพ้:</span><span class="info-val" style="color:var(--danger-color); font-weight:600;">${chk.allergy}</span></div>
+        <div class="info-list-item"><span class="info-label">ตรวจร่างกายทั่วไป:</span><span class="info-val">${chk.physical}</span></div>
+        <div class="info-list-item"><span class="info-label">ประวัติสูบบุหรี่:</span><span class="info-val">${chk.smoke}</span></div>
+        <div class="info-list-item"><span class="info-label">ประวัติดื่มแอลกอฮอล์:</span><span class="info-val">${chk.drink}</span></div>
+        <div class="info-list-item"><span class="info-label">ตาบอดสี:</span><span class="info-val">${chk.colorBlind || "-"}</span></div>
+        <div class="info-list-item"><span class="info-label">น้ำหนัก (kg) / ส่วนสูง (cm):</span><span class="info-val">${chk.weight} / ${chk.height}</span></div>
+        <div class="info-list-item"><span class="info-label">BMI / ผลแปร BMI:</span><span class="info-val">${chk.bmi} (${chk.bmiInterpretation})</span></div>
+        <div class="info-list-item"><span class="info-label">สายตาด้วยคอมพิวเตอร์:</span><span class="info-val">${chk.eyeComputer || "-"}</span></div>
+        <div class="info-list-item"><span class="info-label">ผลตรวจเลือด (CBC):</span><span class="info-val">${chk.cbc}</span></div>
+        <div class="info-list-item"><span class="info-label">ตรวจปัสสาวะ (UA):</span><span class="info-val">${chk.ua}</span></div>
+        <div class="info-list-item"><span class="info-label">ผลเอกซเรย์ปอด (X-ray):</span><span class="info-val">${chk.xray}</span></div>
+        <div class="info-list-item"><span class="info-label">ผลตรวจไขมันในเลือด (Lipid):</span><span class="info-val">${chk.lipid}</span></div>
+        <div class="info-list-item"><span class="info-label">ปัสสาวะระดับน้ำตาล (Sugar):</span><span class="info-val">${chk.sugarUA || "-"}</span></div>
+        <div class="info-list-item"><span class="info-label">การทำงานของตับ:</span><span class="info-val">${chk.liver || "-"}</span></div>
+        <div class="info-list-item"><span class="info-label">การทำงานของไต:</span><span class="info-val">${chk.kidney || "-"}</span></div>
+        <div class="info-list-item"><span class="info-label">กรดยูริคในเลือด:</span><span class="info-val">${chk.uric || "-"}</span></div>
+      `;
+    }
+
+    // Dynamic Medications inputs builder
+    function addMedicationRow(isNonEmp = false, isEdit = false) {
+      const containerId = isEdit ? "edit-medication-rows-container" : (isNonEmp ? "non-medication-rows-container" : "medication-rows-container");
+      const container = document.getElementById(containerId);
+      
+      const rowId = `med-row-${Date.now()}-${Math.floor(Math.random()*100)}`;
+      const medRow = document.createElement("div");
+      medRow.className = "med-row";
+      medRow.id = rowId;
+      
+      // Select dropdown
+      let selectHtml = `<select class="input-control med-name-select" style="padding:6px 10px; font-size:0.85rem;"><option value="" disabled selected>-- เลือกยา --</option>`;
+      MEDICINE_LIST.forEach(med => {
+        selectHtml += `<option value="${med}">${med}</option>`;
+      });
+      selectHtml += `</select>`;
+      
+      medRow.innerHTML = `
+        ${selectHtml}
+        <input type="number" class="input-control med-qty-input" min="1" value="1" style="padding:6px 10px; font-size:0.85rem; text-align:center;">
+        <button class="remove-med-btn" onclick="document.getElementById('${rowId}').remove()"><i class="fa-solid fa-trash"></i></button>
+      `;
+      container.appendChild(medRow);
+    }
+
+    // Select Post-service Status (Rest / BTW / Refer)
+    function selectPostStatus(statusVal, isNonEmp = false) {
+      if (isNonEmp) {
+        selectedNonEmpPostStatusVal = statusVal;
+        
+        // Remove active class from siblings
+        document.querySelectorAll("#page-non-emp-entry .status-btn").forEach(btn => {
+          btn.classList.remove("active");
+          if (btn.getAttribute("data-val") === statusVal) btn.classList.add("active");
+        });
+        
+        // Toggle conditionally inputs
+        document.getElementById("non-status-rest-panel").style.display = statusVal === "Rest" ? "grid" : "none";
+        document.getElementById("non-status-refer-panel").style.display = statusVal === "Refer" ? "grid" : "none";
+      } else {
+        selectedPostStatusVal = statusVal;
+        
+        document.querySelectorAll("#page-emp-entry .status-btn").forEach(btn => {
+          btn.classList.remove("active");
+          if (btn.getAttribute("data-val") === statusVal) btn.classList.add("active");
+        });
+        
+        document.getElementById("status-rest-panel").style.display = statusVal === "Rest" ? "grid" : "none";
+        document.getElementById("status-refer-panel").style.display = statusVal === "Refer" ? "grid" : "none";
+      }
+    }
+    
+    // Referral hospital dropdown conditional input toggle
+    function toggleReferHospitalText(val, isNonEmp = false) {
+      const panelId = isNonEmp ? "non-refer-hospital-other-group" : "refer-hospital-other-group";
+      document.getElementById(panelId).style.display = val === "อื่นๆ" ? "block" : "none";
+    }
+
+    // Collect treatment log and submit to GAS
+    function submitTreatmentLog(isNonEmp = false) {
+      const data = {};
+      const containerSelector = isNonEmp ? "#page-non-emp-entry" : "#page-emp-entry";
+      
+      // 1. Employee Details
+      if (isNonEmp) {
+        data.empId = document.getElementById("non-emp-code").value; // e.g. A4
+        data.name = document.getElementById("non-emp-name").value.trim();
+        data.surname = document.getElementById("non-emp-surname").value.trim();
+        data.department = document.getElementById("non-emp-dept").value.trim();
+        data.congenitalDisease = document.getElementById("non-emp-disease").value.trim();
+        data.drugAllergies = document.getElementById("non-emp-allergy").value.trim();
+        
+        data.system = document.getElementById("non-treat-system").value;
+        data.shift = document.getElementById("non-treat-shift").value;
+        data.cc = document.getElementById("non-treat-cc").value.trim();
+        data.dx = document.getElementById("non-treat-dx").value.trim();
+        
+        data.status = selectedNonEmpPostStatusVal;
+        data.bedStartTime = document.getElementById("non-rest-start-time").value;
+        data.bedEndTime = document.getElementById("non-rest-end-time").value;
+        
+        // Refer Hospital
+        const refSel = document.getElementById("non-refer-hospital-select").value;
+        data.referHospital = refSel === "อื่นๆ" ? document.getElementById("non-refer-hospital-other").value.trim() : refSel;
+      } else {
+        data.empId = currentEmployeeData.empId;
+        data.name = document.getElementById("emp-name").value.trim();
+        data.surname = document.getElementById("emp-surname").value.trim();
+        data.department = document.getElementById("emp-dept").value.trim();
+        data.congenitalDisease = document.getElementById("emp-disease").value.trim();
+        data.drugAllergies = document.getElementById("emp-allergy").value.trim();
+        
+        data.isNewEmployee = isNewEmployeeFlag; // to save to Name sheet
+        
+        data.system = document.getElementById("treat-system").value;
+        data.shift = document.getElementById("treat-shift").value;
+        data.cc = document.getElementById("treat-cc").value.trim();
+        data.dx = document.getElementById("treat-dx").value.trim();
+        
+        data.status = selectedPostStatusVal;
+        data.bedStartTime = document.getElementById("rest-start-time").value;
+        data.bedEndTime = document.getElementById("rest-end-time").value;
+        
+        const refSel = document.getElementById("refer-hospital-select").value;
+        data.referHospital = refSel === "อื่นๆ" ? document.getElementById("refer-hospital-other").value.trim() : refSel;
+      }
+      
+      // 2. Validate essential details
+      if (!data.name || !data.surname) {
+        showToast("กรุณาระบุ ชื่อ และ นามสกุล ของผู้ใช้บริการ", "warning");
+        return;
+      }
+      if (!data.system) {
+        showToast("กรุณาเลือก ระบบโรค ของการวินิจฉัย", "warning");
+        return;
+      }
+      
+      // 3. Collect medications list
+      data.medications = [];
+      const medRowsContainer = isNonEmp ? "non-medication-rows-container" : "medication-rows-container";
+      const rows = document.querySelectorAll(`#${medRowsContainer} .med-row`);
+      let medValidateErr = false;
+      
+      rows.forEach(row => {
+        const medName = row.querySelector(".med-name-select").value;
+        const qty = parseInt(row.querySelector(".med-qty-input").value, 10);
+        
+        if (medName) {
+          if (!qty || qty <= 0) {
+            medValidateErr = true;
+          } else {
+            data.medications.push({ name: medName, qty: qty });
+          }
+        }
+      });
+      
+      if (medValidateErr) {
+        showToast("จำนวนยาทีระบุต้องมีอย่างน้อย 1 ชิ้น", "warning");
+        return;
+      }
+      
+      // 4. Validate Rest details
+      if (data.status === "Rest" && !data.bedStartTime) {
+        showToast("กรุณาระบุเวลาที่เริ่มนอนพักห้องพยาบาล", "warning");
+        return;
+      }
+      // 5. Validate Refer details
+      if (data.status === "Refer" && !data.referHospital) {
+        showToast("กรุณาระบุโรงพยาบาลที่ส่งต่อไปรักษา", "warning");
+        return;
+      }
+      
+      showLoading(true, "กำลังส่งบันทึกผลเข้าระบบ Sheets...");
+      
+      // Submit GAS
+      google.script.run
+        .withSuccessHandler(function(res) {
+          showLoading(false);
+          if (res.success) {
+            showToast(res.message, "success");
+            
+            // Reset Form Panels
+            if (isNonEmp) {
+              document.getElementById("non-emp-name").value = "";
+              document.getElementById("non-emp-surname").value = "";
+              document.getElementById("non-emp-dept").value = "";
+              document.getElementById("non-emp-disease").value = "ไม่ทราบข้อมูล";
+              document.getElementById("non-emp-allergy").value = "ไม่ทราบข้อมูล";
+              document.getElementById("non-treat-system").value = "";
+              document.getElementById("non-treat-cc").value = "";
+              document.getElementById("non-treat-dx").value = "";
+              document.getElementById("non-medication-rows-container").innerHTML = "";
+              addMedicationRow(true);
+              
+              // Reset status
+              selectPostStatus('BTW', true);
+            } else {
+              // Hide detail panels and clear
+              document.getElementById("emp-details-form").style.display = "none";
+              document.getElementById("visit-history-card").style.display = "none";
+              document.getElementById("treatment-entry-card").style.display = "none";
+              document.getElementById("checkup-history-card").style.display = "none";
+              document.getElementById("emp-id-input").value = "";
+              currentEmployeeData = null;
+            }
+          } else {
+            showToast("ล้มเหลว: " + res.message, "danger");
+          }
+        })
+        .withFailureHandler(function(err) {
+          showLoading(false);
+          showToast("ไม่สามารถประมวลผลคำขอได้ในขณะนี้", "danger");
+        })
+        .saveVisitRecord(data);
+    }
+
+    /* =========================================================================
+       PAGE 2: NON-EMPLOYEE PREFIX LOGIC
+       ========================================================================= */
+    function setNonEmpPrefix(val) {
+      // Clear fields if type of user changes
+      document.getElementById("non-emp-name").value = "";
+      document.getElementById("non-emp-surname").value = "";
+      
+      // Set Department defaults
+      const depts = {
+        'A1': 'แม่บ้าน',
+        'A2': 'รปภ.',
+        'A3': 'กระเป๋ายา',
+        'A4': 'Vendor, visitor, นศ.ฝึกงาน',
+        'A5': 'หอพัก',
+        'A6': 'งานกีฬา Training นอกสถานที่'
+      };
+      document.getElementById("non-emp-dept").value = depts[val] || "";
+      
+      // Preset dynamic medications list
+      document.getElementById("non-medication-rows-container").innerHTML = "";
+      addMedicationRow(true);
+      
+      // Default start bed time for non-employee
+      const startInput = document.getElementById("non-rest-start-time");
+      const now = new Date();
+      let hour = String(now.getHours()).padStart(2, '0');
+      let min = String(now.getMinutes()).padStart(2, '0');
+      startInput.value = `${hour}:${min}`;
+    }
+
+    /* =========================================================================
+       PAGE 3: SERVICE HISTORY & EDIT/DELETE
+       ========================================================================= */
+       
+    let searchHistoryDataCached = [];
+    
+    function searchHistory() {
+      const empIdVal = document.getElementById("hist-search-id").value.trim();
+      if (!empIdVal) {
+        showToast("กรุณาระบุรหัสพนักงานเพื่อค้นหาประวัติการรักษา", "warning");
+        return;
+      }
+      
+      showLoading(true, "กำลังโหลดประวัติการรับบริการห้องพยาบาล...");
+      
+      google.script.run
+        .withSuccessHandler(function(response) {
+          showLoading(false);
+          searchHistoryDataCached = response;
+          
+          document.getElementById("history-table-title").style.display = "block";
+          const tbody = document.getElementById("history-log-tbody");
+          tbody.innerHTML = "";
+          
+          if (response && response.length > 0) {
+            response.forEach(row => {
+              const formattedDate = new Date(row.date).toLocaleDateString('th-TH', {
+                year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+              });
+              
+              // Formatting beds time or referral
+              let statusSummary = `<span style="font-weight:600; color:var(--text-muted);">${row.status}</span>`;
+              if (row.status === "BTW") {
+                statusSummary = `<span class="btn-success" style="padding:4px 8px; font-size:0.75rem; border-radius:6px; font-weight:500;">BTW</span>`;
+              } else if (row.status === "Rest") {
+                const bedEndTxt = row.bedEndTime ? row.bedEndTime : "<i>ยังไม่ตื่นนอน (พักรักษาตัว)</i>";
+                statusSummary = `
+                  <div style="font-size:0.8rem;">
+                    <span class="btn" style="padding:2px 6px; font-size:0.7rem; border-radius:4px; background:var(--accent-color);">Rest Bed</span>
+                    <div style="margin-top:4px;"><b>เริ่ม:</b> ${row.bedStartTime}</div>
+                    <div><b>สิ้นสุด:</b> ${bedEndTxt}</div>
+                  </div>
+                `;
+              } else if (row.status === "Refer") {
+                statusSummary = `
+                  <div style="font-size:0.8rem;">
+                    <span class="btn btn-danger" style="padding:2px 6px; font-size:0.7rem; border-radius:4px;">Refer</span>
+                    <div style="margin-top:4px; font-weight:500;">รพ. ${row.referHospital}</div>
+                  </div>
+                `;
+              }
+              
+              const isAccident = row.acc === "Yes" ? `<div style="margin-top:4px; color:var(--warning-color); font-size:0.75rem; font-weight:600;"><i class="fa-solid fa-triangle-exclamation"></i> อุบัติเหตุจากงาน</div>` : "";
+              
+              tbody.innerHTML += `
+                <tr>
+                  <td>${formattedDate}</td>
+                  <td><b>${row.name} ${row.surname}</b><br><small style="color:var(--text-muted);">${row.empId}</small></td>
+                  <td>${row.congenitalDisease}</td>
+                  <td><span style="color:${row.drugAllergies!=='ไม่ทราบข้อมูล'?'var(--danger-color)':'var(--text-muted)'}">${row.drugAllergies}</span></td>
+                  <td>กะ ${row.shift}<br><small style="color:var(--text-muted);">${row.department}</small></td>
+                  <td><span style="font-size:0.8rem; font-weight:500; background:rgba(99, 102, 241, 0.15); padding:4px 8px; border-radius:6px; color:#fff;">${row.system}</span></td>
+                  <td>
+                    <div><b>CC:</b> ${row.cc || '-'}</div>
+                    <div style="margin-top:4px;"><b>DX:</b> ${row.dx || '-'}</div>
+                    ${isAccident}
+                  </td>
+                  <td><small>${row.medication || '-'}</small></td>
+                  <td>${statusSummary}</td>
+                  <td>
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                      <button class="btn" style="padding:4px 8px; font-size:0.8rem;" onclick="openEditModal('${row.id}')"><i class="fa-solid fa-edit"></i> แก้ไข</button>
+                      <button class="btn btn-danger" style="padding:4px 8px; font-size:0.8rem;" onclick="deleteHistoryRow('${row.id}')"><i class="fa-solid fa-trash"></i> ลบ</button>
+                    </div>
+                  </td>
+                </tr>
+              `;
+            });
+          } else {
+            tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted);">ไม่พบประวัติการรับบริการของรหัสนี้ในระบบ</td></tr>`;
+          }
+        })
+        .withFailureHandler(function(err) {
+          showLoading(false);
+          showToast("ไม่สามารถประวัติได้ในขณะนี้", "danger");
+        })
+        .getServiceHistory(empIdVal);
+    }
+    
+    // Open Edit Modal
+    function openEditModal(recordId) {
+      const record = searchHistoryDataCached.find(r => r.id === recordId);
+      if (!record) return;
+      
+      // Populate fields
+      document.getElementById("edit-row-id").value = record.id;
+      document.getElementById("edit-emp-id").value = record.empId;
+      document.getElementById("edit-name").value = record.name;
+      document.getElementById("edit-surname").value = record.surname;
+      document.getElementById("edit-shift").value = record.shift || "O";
+      document.getElementById("edit-dept").value = record.department || "";
+      document.getElementById("edit-disease").value = record.congenitalDisease || "";
+      document.getElementById("edit-allergy").value = record.drugAllergies || "";
+      document.getElementById("edit-system").value = record.system;
+      document.getElementById("edit-cc").value = record.cc || "";
+      document.getElementById("edit-dx").value = record.dx || "";
+      
+      document.getElementById("edit-status").value = record.status;
+      document.getElementById("edit-bed-start").value = record.bedStartTime || "";
+      document.getElementById("edit-bed-end").value = record.bedEndTime || "";
+      document.getElementById("edit-refer-hospital").value = record.referHospital || "";
+      
+      toggleEditStatusPanels(record.status);
+      
+      // Parse medication string into editable rows
+      const medsContainer = document.getElementById("edit-medication-rows-container");
+      medsContainer.innerHTML = "";
+      
+      // Medicine string structure: "PARA CEMOL 500mg.1000's CPL. (4), AMMONIA 30ml. 12's (1)"
+      if (record.medication) {
+        const parsedMeds = parseMedicationString(record.medication);
+        parsedMeds.forEach(m => {
+          const rowId = `med-row-edit-${Date.now()}-${Math.floor(Math.random()*100)}`;
+          const medRow = document.createElement("div");
+          medRow.className = "med-row";
+          medRow.id = rowId;
+          
+          let selectHtml = `<select class="input-control med-name-select" style="padding:6px 10px; font-size:0.85rem;">`;
+          MEDICINE_LIST.forEach(med => {
+            selectHtml += `<option value="${med}" ${med===m.name?'selected':''}>${med}</option>`;
+          });
+          selectHtml += `</select>`;
+          
+          medRow.innerHTML = `
+            ${selectHtml}
+            <input type="number" class="input-control med-qty-input" min="1" value="${m.qty}" style="padding:6px 10px; font-size:0.85rem; text-align:center;">
+            <button class="remove-med-btn" onclick="document.getElementById('${rowId}').remove()"><i class="fa-solid fa-trash"></i></button>
+          `;
+          medsContainer.appendChild(medRow);
+        });
+      } else {
+        addMedicationRow(false, true);
+      }
+      
+      // Toggle modal class
+      document.getElementById("edit-record-modal").classList.add("active");
+    }
+    
+    // Parse medicine string format "A (qty), B (qty)" to Object Array
+    function parseMedicationString(medStr) {
+      const items = medStr.split(/,\s+/);
+      const meds = [];
+      items.forEach(it => {
+        const match = it.match(/(.+)\s+\((\d+)\)$/);
+        if (match) {
+          meds.push({
+            name: match[1].trim(),
+            qty: parseInt(match[2], 10)
+          });
+        }
+      });
+      return meds;
+    }
+    
+    function closeEditModal() {
+      document.getElementById("edit-record-modal").classList.remove("active");
+    }
+    
+    function toggleEditStatusPanels(statusVal) {
+      document.getElementById("edit-rest-panel").style.display = statusVal === "Rest" ? "grid" : "none";
+      document.getElementById("edit-refer-panel").style.display = statusVal === "Refer" ? "grid" : "none";
+    }
+    
+    // Submit edited details
+    function saveEditedRecord() {
+      const data = {
+        id: document.getElementById("edit-row-id").value,
+        name: document.getElementById("edit-name").value.trim(),
+        surname: document.getElementById("edit-surname").value.trim(),
+        shift: document.getElementById("edit-shift").value,
+        department: document.getElementById("edit-dept").value.trim(),
+        congenitalDisease: document.getElementById("edit-disease").value.trim(),
+        drugAllergies: document.getElementById("edit-allergy").value.trim(),
+        system: document.getElementById("edit-system").value,
+        status: document.getElementById("edit-status").value,
+        cc: document.getElementById("edit-cc").value.trim(),
+        dx: document.getElementById("edit-dx").value.trim(),
+        bedStartTime: document.getElementById("edit-bed-start").value,
+        bedEndTime: document.getElementById("edit-bed-end").value,
+        referHospital: document.getElementById("edit-refer-hospital").value.trim()
+      };
+      
+      // Parse medication list
+      data.medications = [];
+      const rows = document.querySelectorAll("#edit-medication-rows-container .med-row");
+      let medValidateErr = false;
+      
+      rows.forEach(row => {
+        const medName = row.querySelector(".med-name-select").value;
+        const qty = parseInt(row.querySelector(".med-qty-input").value, 10);
+        if (medName) {
+          if (!qty || qty <= 0) {
+            medValidateErr = true;
+          } else {
+            data.medications.push({ name: medName, qty: qty });
+          }
+        }
+      });
+      
+      if (medValidateErr) {
+        showToast("จำนวนยาทีระบุต้องมีอย่างน้อย 1 ชิ้น", "warning");
+        return;
+      }
+      
+      showLoading(true, "กำลังอัปเดตข้อมูลและตัดสต๊อกยาในคลัง...");
+      
+      google.script.run
+        .withSuccessHandler(function(res) {
+          showLoading(false);
+          if (res.success) {
+            showToast(res.message, "success");
+            closeEditModal();
+            searchHistory(); // reload history table
+          } else {
+            showToast("แก้ไขล้มเหลว: " + res.message, "danger");
+          }
+        })
+        .withFailureHandler(function(err) {
+          showLoading(false);
+          showToast("ไม่สามารถประมวลผลได้ในขณะนี้", "danger");
+        })
+        .editHistoryRecord(data);
+    }
+    
+    // Delete History row
+    function deleteHistoryRow(rowId) {
+      if (confirm("ยืนยันการลบประวัติการรับรักษานี้ใช่หรือไม่? (คลังสต๊อกยาที่ถูกจ่ายในรอบนี้จะเพิ่มคืนระบบอัตโนมัติ)")) {
+        showLoading(true, "กำลังดำเนินการลบข้อมูล...");
+        google.script.run
+          .withSuccessHandler(function(res) {
+            showLoading(false);
+            if (res.success) {
+              showToast(res.message, "success");
+              searchHistory(); // reload
+            } else {
+              showToast("เกิดข้อผิดพลาดในการลบข้อมูล", "danger");
+            }
+          })
+          .withFailureHandler(function(err) {
+            showLoading(false);
+            showToast("การเชื่อมต่อล้มเหลว", "danger");
+          })
+          .deleteHistoryRecord(rowId);
+      }
+    }
+
+    /* =========================================================================
+       PAGE 4: DASHBOARD ANALYTICS & CHARTS
+       ========================================================================= */
+       
+    function changeDashboardFilter(type) {
+      // Manage active tabs UI
+      document.querySelectorAll("#page-dashboard .btn-secondary").forEach(btn => {
+        btn.classList.remove("active");
+      });
+      document.getElementById(`db-filter-${type}`).classList.add("active");
+      
+      currentDashboardFilter = type;
+      loadDashboardData();
+    }
+    
+    function loadDashboardData() {
+      showLoading(true, "กำลังสรุปผลวิเคราะห์สถิติข้อมูล...");
+      
+      google.script.run
+        .withSuccessHandler(function(res) {
+          showLoading(false);
+          renderDashboardCharts(res);
+          renderDepartmentAnalysisTable(res.departments);
+        })
+        .withFailureHandler(function(err) {
+          showLoading(false);
+          showToast("เกิดความล้มเหลวในการสร้างสถิติแดชบอร์ด", "danger");
+        })
+        .getDashboardData(currentDashboardFilter);
+    }
+    
+    function renderDepartmentAnalysisTable(depts) {
+      const tbody = document.getElementById("dept-analysis-tbody");
+      tbody.innerHTML = "";
+      if (depts && depts.length > 0) {
+        depts.forEach(d => {
+          tbody.innerHTML += `
+            <tr>
+              <td><b>${d.name}</b></td>
+              <td><span style="font-weight:600; color:var(--success-color);">${d.count}</span> ครั้ง</td>
+              <td>${d.topSystem} <small style="color:var(--text-muted);">(${d.topSystemCount} ครั้ง)</small></td>
+            </tr>
+          `;
+        });
+      } else {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">ไม่มีข้อมูลตามตัวกรองที่เลือก</td></tr>`;
+      }
+    }
+    
+    function renderDashboardCharts(data) {
+      // 1. Chart Top 5 Medical Systems
+      const sysLabels = data.systems.map(item => item.name);
+      const sysValues = data.systems.map(item => item.count);
+      
+      if (charts.systems) charts.systems.destroy();
+      const ctxSys = document.getElementById("chart-systems").getContext("2d");
+      charts.systems = new Chart(ctxSys, {
+        type: 'bar',
+        data: {
+          labels: sysLabels,
+          datasets: [{
+            label: 'จำนวนครั้ง (ผู้รับบริการ)',
+            data: sysValues,
+            backgroundColor: 'rgba(99, 102, 241, 0.6)',
+            borderColor: 'rgba(99, 102, 241, 1)',
+            borderWidth: 1,
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: { color: 'rgba(255, 255, 255, 0.05)' },
+              ticks: { color: '#94a3b8' }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { color: '#94a3b8', font: { size: 10 } }
+            }
+          }
+        }
+      });
+      
+      // 2. Chart Top 10 Employees
+      const empLabels = data.employees.map(item => item.empId);
+      const empValues = data.employees.map(item => item.count);
+      
+      if (charts.employees) charts.employees.destroy();
+      const ctxEmp = document.getElementById("chart-employees").getContext("2d");
+      charts.employees = new Chart(ctxEmp, {
+        type: 'bar', // Horizontal Bar in options
+        data: {
+          labels: empLabels,
+          datasets: [{
+            label: 'จำนวนครั้ง (ผู้รับบริการ)',
+            data: empValues,
+            backgroundColor: 'rgba(245, 158, 11, 0.6)',
+            borderColor: 'rgba(245, 158, 11, 1)',
+            borderWidth: 1,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: {
+              beginAtZero: true,
+              grid: { color: 'rgba(255, 255, 255, 0.05)' },
+              ticks: { color: '#94a3b8' }
+            },
+            y: {
+              grid: { display: false },
+              ticks: { color: '#94a3b8' }
+            }
+          }
+        }
+      });
+      
+      // 3. Chart Top 5 Departments
+      const deptLabels = data.departments.map(item => item.name);
+      const deptValues = data.departments.map(item => item.count);
+      
+      if (charts.departments) charts.departments.destroy();
+      const ctxDept = document.getElementById("chart-departments").getContext("2d");
+      charts.departments = new Chart(ctxDept, {
+        type: 'doughnut',
+        data: {
+          labels: deptLabels,
+          datasets: [{
+            data: deptValues,
+            backgroundColor: [
+              'rgba(99, 102, 241, 0.65)',
+              'rgba(16, 185, 129, 0.65)',
+              'rgba(239, 68, 68, 0.65)',
+              'rgba(245, 158, 11, 0.65)',
+              'rgba(168, 85, 247, 0.65)'
+            ],
+            borderWidth: 1,
+            borderColor: 'rgba(255, 255, 255, 0.1)'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { color: '#94a3b8', font: { size: 10 } }
+            }
+          }
+        }
+      });
+    }
+
+    /* =========================================================================
+       PAGE 5: REPORT GENERATOR
+       ========================================================================= */
+       
+    function resetReportFilters() {
+      document.getElementById("rpt-year").value = "2026";
+      document.getElementById("rpt-system").value = "";
+      document.getElementById("rpt-dept").value = "";
+      document.getElementById("rpt-month").value = "";
+      document.getElementById("rpt-day").value = "";
+      showToast("รีเซ็ตตัวคัดกรองตัวกรองข้อมูลเรียบร้อย", "warning");
+    }
+    
+    let currentReportDataCached = [];
+    
+    function generateReport() {
+      const filters = {
+        year: document.getElementById("rpt-year").value,
+        system: document.getElementById("rpt-system").value,
+        dept: document.getElementById("rpt-dept").value.trim(),
+        month: document.getElementById("rpt-month").value,
+        day: document.getElementById("rpt-day").value.trim()
+      };
+      
+      showLoading(true, "กำลังจัดทำเอกสารและสืบค้นรายงาน...");
+      
+      google.script.run
+        .withSuccessHandler(function(response) {
+          showLoading(false);
+          currentReportDataCached = response;
+          const tbody = document.getElementById("report-tbody");
+          tbody.innerHTML = "";
+          
+          if (response && response.length > 0) {
+            response.forEach(row => {
+              const formattedDate = new Date(row.date).toLocaleDateString('th-TH', {
+                year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+              });
+              
+              tbody.innerHTML += `
+                <tr>
+                  <td>${formattedDate}</td>
+                  <td><b>${row.empId}</b></td>
+                  <td>${row.name} ${row.surname}</td>
+                  <td>${row.shift}</td>
+                  <td>${row.department}</td>
+                  <td>${row.symptom}</td>
+                  <td><span style="font-size:0.8rem; background:rgba(99, 102, 241, 0.15); padding:4px 8px; border-radius:6px;">${row.system}</span></td>
+                  <td><span style="color:${row.btw==='Yes'?'var(--success-color)':'var(--text-muted)'}">${row.btw}</span></td>
+                  <td><span style="color:${row.refer!=='No'?'var(--danger-color)':'var(--text-muted)'}">${row.refer}</span></td>
+                  <td>${row.rest}</td>
+                  <td><span style="color:${row.acc==='Yes'?'var(--warning-color)':'var(--text-muted)'}; font-weight:${row.acc==='Yes'?'600':'400'};">${row.acc}</span></td>
+                </tr>
+              `;
+            });
+            showToast(`ดึงรายงานข้อมูลสำเร็จ ${response.length} รายการ`, "success");
+          } else {
+            tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: var(--text-muted);">ไม่พบข้อมูลรายงานตามการคัดกรองดังกล่าว</td></tr>`;
+          }
+        })
+        .withFailureHandler(function(err) {
+          showLoading(false);
+          showToast("ไม่สามารถประมวลผลรายงานได้ในขณะนี้", "danger");
+        })
+        .getReportData(filters);
+    }
+    
+    // Export Report to CSV Format
+    function exportReportToCSV() {
+      if (!currentReportDataCached || currentReportDataCached.length === 0) {
+        showToast("ไม่มีข้อมูลในตารางที่จะส่งออก กรุณากดเรียกดูข้อมูลก่อน", "warning");
+        return;
+      }
+      
+      let csvContent = "\uFEFF"; // UTF-8 BOM
+      csvContent += "วันที่ใช้บริการ,รหัสพนักงาน,ชื่อ,นามสกุล,Shift,แผนก,CC อาการสำคัญ,ระบบโรค,BTW,Refer,Rest,Acc อุบัติเหตุจากงาน\n";
+      
+      currentReportDataCached.forEach(r => {
+        const formattedDate = new Date(r.date).toLocaleString('th-TH');
+        
+        // Escape commas & quotes
+        const nameEscaped = `"${r.name.replace(/"/g, '""')}"`;
+        const surnameEscaped = `"${r.surname.replace(/"/g, '""')}"`;
+        const deptEscaped = `"${r.department.replace(/"/g, '""')}"`;
+        const ccEscaped = `"${r.symptom.replace(/"/g, '""')}"`;
+        const referEscaped = `"${r.refer.replace(/"/g, '""')}"`;
+        const restEscaped = `"${r.rest.replace(/"/g, '""')}"`;
+        
+        csvContent += `${formattedDate},${r.empId},${nameEscaped},${surnameEscaped},${r.shift},${deptEscaped},${ccEscaped},${r.system},${r.btw},${referEscaped},${restEscaped},${r.acc}\n`;
+      });
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `HANA_Nurse_Report_${Date.now()}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast("ดาวน์โหลดไฟล์ CSV เรียบร้อยแล้ว", "success");
+    }
+
+    /* =========================================================================
+       PAGE 6: MEDICINE STOCK
+       ========================================================================= */
+       
+    function loadMedicineStockData() {
+      showLoading(true, "กำลังโหลดคลังยาสารสนเทศ...");
+      
+      google.script.run
+        .withSuccessHandler(function(response) {
+          showLoading(false);
+          cachedMedStock = response;
+          
+          // Populate Refill stock dropdown if empty
+          const refillSelect = document.getElementById("refill-med-name");
+          refillSelect.innerHTML = `<option value="" disabled selected>-- เลือกชื่อยาที่จะเติมคลัง --</option>`;
+          
+          const statSelect = document.getElementById("stat-med-name");
+          statSelect.innerHTML = `<option value="" disabled selected>-- เลือกชื่อยาเพื่อดูสถิติ --</option>`;
+          
+          response.forEach(med => {
+            refillSelect.innerHTML += `<option value="${med.name}">${med.name}</option>`;
+            statSelect.innerHTML += `<option value="${med.name}">${med.name}</option>`;
+          });
+          
+          renderStockGrid(response);
+        })
+        .withFailureHandler(function(err) {
+          showLoading(false);
+          showToast("ไม่สามารถเรียกดูคลังยาได้ในขณะนี้", "danger");
+        })
+        .getMedicineStock();
+    }
+    
+    function renderStockGrid(meds) {
+      const grid = document.getElementById("meds-stock-grid");
+      grid.innerHTML = "";
+      
+      if (!meds || meds.length === 0) {
+        grid.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:var(--text-muted);">ไม่มีรายการคลังสต๊อก</p>`;
+        return;
+      }
+      
+      meds.forEach(med => {
+        const isLowClass = med.isLow ? "low-stock" : "";
+        const badge = med.isLow ? `<span class="low-badge">ยาใกล้หมด</span>` : "";
+        
+        grid.innerHTML += `
+          <div class="stock-card ${isLowClass}" onclick="selectMedForStats('${med.name}')">
+            ${badge}
+            <div class="stock-name" title="${med.name}">${med.name}</div>
+            <div class="stock-stats">
+              <div>คงคลัง: <span class="stock-qty">${med.current}</span> เม็ด/ชิ้น</div>
+              <div style="text-align:right;">จ่ายแล้ว: <span style="font-weight:600; color:#fff;">${med.dispensed}</span></div>
+            </div>
+            <div style="font-size:0.7rem; color:var(--text-muted); margin-top:8px; display:flex; justify-content:space-between;">
+              <span>ยอดเริ่มต้น: ${med.initial}</span>
+              <span>เกณฑ์แจ้งเตือน: ${med.threshold}</span>
+            </div>
+          </div>
+        `;
+      });
+    }
+    
+    // Quick select medicine for details from card click
+    function selectMedForStats(name) {
+      document.getElementById("stat-med-name").value = name;
+      loadMedicationDispensedStats();
+      showToast("แสดงสถิติการจ่ายของยา: " + name, "success");
+    }
+    
+    // Filter stock inventory search box
+    function filterStockList(keyword) {
+      keyword = keyword.toLowerCase().trim();
+      const filtered = cachedMedStock.filter(med => {
+        return med.name.toLowerCase().includes(keyword);
+      });
+      renderStockGrid(filtered);
+    }
+    
+    // Submit refill stock qty to backend
+    function submitRefillStock() {
+      const medName = document.getElementById("refill-med-name").value;
+      const qty = parseInt(document.getElementById("refill-med-qty").value, 10);
+      
+      if (!medName) {
+        showToast("กรุณาเลือกชื่อยาก่อนเติมคลัง", "warning");
+        return;
+      }
+      if (!qty || qty <= 0) {
+        showToast("กรุณาระบุจำนวนที่จะเติมยาให้ถูกต้อง (> 0)", "warning");
+        return;
+      }
+      
+      showLoading(true, "กำลังลงทะเบียนรับยอดคลังยาเพิ่ม...");
+      
+      google.script.run
+        .withSuccessHandler(function(res) {
+          showLoading(false);
+          if (res.success) {
+            showToast(res.message, "success");
+            document.getElementById("refill-med-qty").value = "";
+            loadMedicineStockData(); // reload cards
+          } else {
+            showToast("การเติมคลังล้มเหลว: " + res.message, "danger");
+          }
+        })
+        .withFailureHandler(function(err) {
+          showLoading(false);
+          showToast("ไม่สามารถประมวลผลเพิ่มเข้าสต๊อกได้", "danger");
+        })
+        .addMedicineStock(medName, qty);
+    }
+    
+    // Medication Dispensed Stats monthly/yearly breakdown
+    function changeMedStatFilter(type) {
+      document.querySelectorAll("#page-stock .btn-secondary").forEach(btn => {
+        btn.classList.remove("active");
+      });
+      document.getElementById(`med-stat-${type}`).classList.add("active");
+      currentMedStatFilter = type;
+      loadMedicationDispensedStats();
+    }
+    
+    function loadMedicationDispensedStats() {
+      const medName = document.getElementById("stat-med-name").value;
+      if (!medName) return;
+      
+      showLoading(true, "กำลังประมวลสถิติยอดใช้ยา...");
+      
+      google.script.run
+        .withSuccessHandler(function(response) {
+          showLoading(false);
+          const tbody = document.getElementById("med-stats-tbody");
+          tbody.innerHTML = "";
+          
+          if (response && response.length > 0) {
+            response.forEach(row => {
+              tbody.innerHTML += `
+                <tr>
+                  <td><b>${row.label}</b></td>
+                  <td><span style="font-weight:600; color:var(--accent-color);">${row.qty}</span> เม็ด/ชิ้น</td>
+                </tr>
+              `;
+            });
+          } else {
+            tbody.innerHTML = `<tr><td colspan="2" style="text-align: center; color: var(--text-muted);">ไม่พบประวัติยอดจ่ายยาตัวนี้ในคลังประวัติ</td></tr>`;
+          }
+        })
+        .withFailureHandler(function(err) {
+          showLoading(false);
+          showToast("ไม่สามารถวิเคราะห์ข้อมูลสรุปยอดได้", "danger");
+        })
+        .getMedicationHistoryData(medName, currentMedStatFilter);
+    }
+  </script>
+</body>
+</html>
